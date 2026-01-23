@@ -22,33 +22,48 @@ export const Dashboard: React.FC = () => {
   const [viewingCert, setViewingCert] = useState<AnnualAppraisal | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Handle deep linking from shareable URLs
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const phase = params.get('phase') as Tab | null;
     const id = params.get('id');
 
-    if (phase && id) {
-      setActiveTab(phase);
-      if (phase === 'CONTRACT') {
-        const item = contracts.find(c => c.id === id);
-        if (item) {
-          setSelectedContract(item);
-          setShowContractModal(true);
-        }
-      } else if (phase === 'MONTHLY') {
-        const item = monthlyReviews.find(m => m.id === id);
-        if (item) {
-          setSelectedMonthly(item);
-          setShowMonthlyModal(true);
-        }
-      } else if (phase === 'ANNUAL') {
-        const item = appraisals.find(a => a.id === id);
-        if (item) {
-          setSelectedAppraisal(item);
-          setShowAppraisalModal(true);
-        }
+    if (!phase || !id) return;
+
+    let found = false;
+    // Check if data is actually loaded before attempting to find or clearing params
+    const isDataLoaded = contracts.length > 0 || monthlyReviews.length > 0 || appraisals.length > 0;
+
+    if (phase === 'CONTRACT') {
+      const item = contracts.find(c => c.id === id);
+      if (item) {
+        setSelectedContract(item);
+        setShowContractModal(true);
+        setActiveTab('CONTRACT');
+        found = true;
       }
-      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (phase === 'MONTHLY') {
+      const item = monthlyReviews.find(m => m.id === id);
+      if (item) {
+        setSelectedMonthly(item);
+        setShowMonthlyModal(true);
+        setActiveTab('MONTHLY');
+        found = true;
+      }
+    } else if (phase === 'ANNUAL') {
+      const item = appraisals.find(a => a.id === id);
+      if (item) {
+        setSelectedAppraisal(item);
+        setShowAppraisalModal(true);
+        setActiveTab('ANNUAL');
+        found = true;
+      }
+    }
+
+    // Only clear the URL if we found the item OR if data is loaded and we definitely didn't find it
+    if (found || isDataLoaded) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     }
   }, [contracts, monthlyReviews, appraisals]);
 
@@ -73,11 +88,15 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleShare = (phase: Tab, id: string) => {
-    const baseUrl = window.location.origin + window.location.pathname;
+    // Robustly get the base URL without query parameters
+    const baseUrl = window.location.href.split('?')[0];
     const shareUrl = `${baseUrl}?phase=${phase}&id=${id}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-      showToast("Deep Link Copied to Clipboard");
+      showToast("Shareable deep-link copied!", "success");
+    }).catch(err => {
+      console.error('Failed to copy share link: ', err);
+      showToast("Failed to copy link", "error");
     });
   };
 
@@ -89,7 +108,7 @@ export const Dashboard: React.FC = () => {
       <header className="md:hidden flex items-center justify-between p-4 glass-card border-x-0 border-t-0 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex items-center justify-center font-black italic text-xl shadow-lg">W</div>
-          <span className="font-black text-lg tracking-tight">Walpberry</span>
+          <span className="font-black text-lg tracking-tight text-white">Walpberry</span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
