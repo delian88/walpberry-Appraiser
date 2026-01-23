@@ -33,11 +33,23 @@ export interface User {
   department: string;
 }
 
+export interface CriteriaValues {
+  o: string; // Outstanding
+  e: string; // Excellent
+  vg: string; // Very Good
+  g: string; // Good
+  f: string; // Fair
+  p: string; // Poor
+}
+
 export interface KRAEntry {
   id: string;
   area: string;
   objectives: string;
-  weight: number;
+  weight: number; // KRA Weight
+  objWeight: number; // Objective Weight
+  gradedWeight: number;
+  criteria: CriteriaValues;
   kpis: string;
   target: number;
   unit: 'Percentage' | 'Quantity' | 'Rating' | 'Time-based';
