@@ -98,33 +98,71 @@ export const Dashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 gap-6">
             {activeTab === 'CONTRACT' && (
-              <>
-                {userContracts.length === 0 && <div className="text-center py-32 glass-card rounded-[2.5rem] border-dashed border-white/10 text-slate-500 font-bold uppercase tracking-widest">No active contracts found.</div>}
-                {userContracts.map(c => (
-                  <div key={c.id} className="glass-card p-8 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all hover:-translate-y-1 shimmer-container">
-                    <div className="flex items-center gap-8">
-                       <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all ${c.isActive ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-white/5 text-slate-500 group-hover:bg-indigo-500/10 group-hover:text-indigo-400'}`}>
-                          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                       </div>
-                       <div>
-                          <div className="flex items-center gap-3">
-                            <p className="text-xl font-black text-white">Performance Contract {new Date(c.updatedAt).getFullYear()}</p>
-                            <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${c.isActive ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
-                                {c.isActive ? 'Active' : 'Inactive'}
-                            </span>
+              <div className="glass-card rounded-[2.5rem] overflow-hidden border-white/10 shadow-2xl">
+                <table className="w-full text-left">
+                  <thead className="bg-white/5 border-b border-white/5">
+                    <tr>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Contract Detail</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Period</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center">Operation</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center">Workflow Status</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {userContracts.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-32 text-center text-slate-500 font-bold uppercase tracking-widest">No contracts found.</td>
+                      </tr>
+                    )}
+                    {userContracts.map(c => (
+                      <tr key={c.id} className="group hover:bg-white/5 transition-all">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-all">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            </div>
+                            <span className="font-black text-white">Contract {new Date(c.updatedAt).getFullYear()}</span>
                           </div>
-                          <p className="text-xs text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">Period: {c.periodFrom} to {c.periodTo}</p>
-                       </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${c.status === FormStatus.APPROVED ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>{c.status}</span>
-                      {isPM && c.status === FormStatus.SUBMITTED && (
-                        <button onClick={() => handleApproveContract(c)} className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg">Verify & Approve</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="text-xs text-slate-400 font-bold tracking-tight">{c.periodFrom} — {c.periodTo}</span>
+                        </td>
+                        <td className="px-8 py-6 text-center">
+                          <span className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                            c.isActive 
+                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
+                              : 'bg-slate-800 text-slate-500 border-slate-700'
+                          }`}>
+                            {c.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-center">
+                          <span className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                            c.status === FormStatus.APPROVED 
+                              ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+                              : c.status === FormStatus.DRAFT 
+                                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                : 'bg-white/5 text-slate-400 border-white/10'
+                          }`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <div className="flex justify-end gap-3">
+                            {isPM && c.status === FormStatus.SUBMITTED && (
+                              <button onClick={() => handleApproveContract(c)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg">Approve</button>
+                            )}
+                            <button className="bg-white/5 text-slate-400 p-2 rounded-xl hover:bg-white/10 hover:text-white transition-all">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
 
             {activeTab === 'MONTHLY' && (
