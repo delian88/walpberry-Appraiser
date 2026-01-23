@@ -11,7 +11,7 @@ import { HRDashboard } from './HRDashboard';
 type Tab = 'CONTRACT' | 'MONTHLY' | 'ANNUAL' | 'HR';
 
 export const Dashboard: React.FC = () => {
-  const { currentUser, contracts, appraisals, monthlyReviews, logout, upsertContract } = useAppContext();
+  const { currentUser, contracts, appraisals, monthlyReviews, logout, upsertContract, showToast } = useAppContext();
   const [activeTab, setActiveTab] = useState<Tab>(currentUser?.role === UserRole.ADMIN ? 'HR' : 'CONTRACT');
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedContract, setSelectedContract] = useState<PerformanceContract | undefined>(undefined);
@@ -21,7 +21,6 @@ export const Dashboard: React.FC = () => {
   const [selectedMonthly, setSelectedMonthly] = useState<MonthlyReview | undefined>(undefined);
   const [viewingCert, setViewingCert] = useState<AnnualAppraisal | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -78,8 +77,7 @@ export const Dashboard: React.FC = () => {
     const shareUrl = `${baseUrl}?phase=${phase}&id=${id}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-      setShareFeedback(id);
-      setTimeout(() => setShareFeedback(null), 2000);
+      showToast("Deep Link Copied to Clipboard");
     });
   };
 
@@ -87,13 +85,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row text-slate-200 overflow-x-hidden">
-      {/* Share Toast */}
-      {shareFeedback && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-emerald-600/40 animate-bounce">
-          Deep Link Copied to Clipboard
-        </div>
-      )}
-
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between p-4 glass-card border-x-0 border-t-0 sticky top-0 z-40">
         <div className="flex items-center gap-3">
