@@ -1,15 +1,18 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Appraisal, UserRole, AppraisalStatus } from '../types';
-import { MOCK_USERS } from '../constants';
+import { User, PerformanceContract, MonthlyReview, AnnualAppraisal } from '../types';
 
 interface AppContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
-  appraisals: Appraisal[];
-  addAppraisal: (appraisal: Appraisal) => void;
-  updateAppraisal: (id: string, updates: Partial<Appraisal>) => void;
-  getAppraisal: (id: string) => Appraisal | undefined;
+  contracts: PerformanceContract[];
+  monthlyReviews: MonthlyReview[];
+  appraisals: AnnualAppraisal[];
+  upsertContract: (contract: PerformanceContract) => void;
+  upsertMonthly: (review: MonthlyReview) => void;
+  upsertAppraisal: (appraisal: AnnualAppraisal) => void;
+  // Added: updateAppraisal to support partial updates in ReviewView.tsx
+  updateAppraisal: (id: string, updates: Partial<any>) => void;
   logout: () => void;
 }
 
@@ -17,47 +20,62 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [appraisals, setAppraisals] = useState<Appraisal[]>([]);
+  const [contracts, setContracts] = useState<PerformanceContract[]>([]);
+  const [monthlyReviews, setMonthlyReviews] = useState<MonthlyReview[]>([]);
+  const [appraisals, setAppraisals] = useState<AnnualAppraisal[]>([]);
 
-  // Load state from local storage on mount
   useEffect(() => {
-    const savedAppraisals = localStorage.getItem('walpberry_appraisals');
-    if (savedAppraisals) {
-      setAppraisals(JSON.parse(savedAppraisals));
-    }
-    const savedUser = localStorage.getItem('walpberry_user');
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-    }
+    const data = ['contracts', 'monthlyReviews', 'appraisals', 'currentUser'];
+    const setters = [setContracts, setMonthlyReviews, setAppraisals, setCurrentUser];
+    data.forEach((key, i) => {
+      const saved = localStorage.getItem(`walpberry_${key}`);
+      if (saved) setters[i](JSON.parse(saved));
+    });
   }, []);
 
-  // Persist state to local storage
   useEffect(() => {
+    localStorage.setItem('walpberry_contracts', JSON.stringify(contracts));
+    localStorage.setItem('walpberry_monthlyReviews', JSON.stringify(monthlyReviews));
     localStorage.setItem('walpberry_appraisals', JSON.stringify(appraisals));
-  }, [appraisals]);
+    if (currentUser) localStorage.setItem('walpberry_currentUser', JSON.stringify(currentUser));
+  }, [contracts, monthlyReviews, appraisals, currentUser]);
 
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('walpberry_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('walpberry_user');
-    }
-  }, [currentUser]);
-
-  const addAppraisal = (appraisal: Appraisal) => {
-    setAppraisals(prev => [...prev, appraisal]);
+  const upsertContract = (contract: PerformanceContract) => {
+    setContracts(prev => {
+      const exists = prev.find(c => c.id === contract.id);
+      return exists ? prev.map(c => c.id === contract.id ? contract : c) : [...prev, contract];
+    });
   };
 
-  const updateAppraisal = (id: string, updates: Partial<Appraisal>) => {
-    setAppraisals(prev => prev.map(a => a.id === id ? { ...a, ...updates, updatedAt: Date.now() } : a));
+  const upsertMonthly = (review: MonthlyReview) => {
+    setMonthlyReviews(prev => {
+      const exists = prev.find(r => r.id === review.id);
+      return exists ? prev.map(r => r.id === review.id ? review : r) : [...prev, review];
+    });
   };
 
-  const getAppraisal = (id: string) => appraisals.find(a => a.id === id);
+  const upsertAppraisal = (appraisal: AnnualAppraisal) => {
+    setAppraisals(prev => {
+      const exists = prev.find(a => a.id === appraisal.id);
+      return exists ? prev.map(a => a.id === appraisal.id ? appraisal : a) : [...prev, appraisal];
+    });
+  };
 
-  const logout = () => setCurrentUser(null);
+  // Fixed: Implemented updateAppraisal method
+  const updateAppraisal = (id: string, updates: Partial<any>) => {
+    setAppraisals(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('walpberry_currentUser');
+  };
 
   return (
-    <AppContext.Provider value={{ currentUser, setCurrentUser, appraisals, addAppraisal, updateAppraisal, getAppraisal, logout }}>
+    <AppContext.Provider value={{ 
+      currentUser, setCurrentUser, contracts, monthlyReviews, appraisals, 
+      upsertContract, upsertMonthly, upsertAppraisal, updateAppraisal, logout 
+    }}>
       {children}
     </AppContext.Provider>
   );
