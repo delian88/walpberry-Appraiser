@@ -3,8 +3,8 @@ import { User, UserRole, AppraisalStatus } from './types';
 
 export const MOCK_USERS: User[] = [
   { id: 'emp-1', name: 'John Doe', email: 'john@walpberry.com', role: UserRole.EMPLOYEE, department: 'Engineering' },
-  { id: 'pm-1', name: 'Jane Smith', email: 'jane@walpberry.com', role: UserRole.PM, department: 'Project Management' },
-  { id: 'cto-1', name: 'Michael Brown', email: 'michael@walpberry.com', role: UserRole.CTO, department: 'Executive' },
+  { id: 'pm-1', name: 'John Adewale', email: 'john.adewale@walpberry.com', role: UserRole.PM, department: 'Project Management' },
+  { id: 'cto-1', name: 'Victor Idowu', email: 'victor.idowu@walpberry.com', role: UserRole.CTO, department: 'Executive' },
 ];
 
 export const STATUS_LABELS: Record<AppraisalStatus, { label: string; color: string }> = {

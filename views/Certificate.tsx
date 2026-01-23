@@ -71,7 +71,7 @@ export const Certificate: React.FC<Props> = ({ appraisal, onClose }) => {
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Project Manager</p>
               </div>
               <div className="text-center border-t border-slate-200 pt-4">
-                <p className="font-bold text-slate-800 mb-1">Michael Brown</p>
+                <p className="font-bold text-slate-800 mb-1">Victor Idowu</p>
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Chief Technology Officer</p>
               </div>
             </div>
