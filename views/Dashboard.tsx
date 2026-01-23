@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { UserRole, FormStatus, PerformanceContract, AnnualAppraisal, MonthlyReview } from '../types';
 import { ContractForm } from './ContractForm';
@@ -13,11 +13,46 @@ export const Dashboard: React.FC = () => {
   const { currentUser, contracts, appraisals, monthlyReviews, logout, upsertContract } = useAppContext();
   const [activeTab, setActiveTab] = useState<Tab>('CONTRACT');
   const [showContractModal, setShowContractModal] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<PerformanceContract | undefined>(undefined);
   const [showAppraisalModal, setShowAppraisalModal] = useState(false);
+  const [selectedAppraisal, setSelectedAppraisal] = useState<AnnualAppraisal | undefined>(undefined);
   const [showMonthlyModal, setShowMonthlyModal] = useState(false);
   const [selectedMonthly, setSelectedMonthly] = useState<MonthlyReview | undefined>(undefined);
   const [viewingCert, setViewingCert] = useState<AnnualAppraisal | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+
+  // Deep Link Parser
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const phase = params.get('phase') as Tab | null;
+    const id = params.get('id');
+
+    if (phase && id) {
+      setActiveTab(phase);
+      if (phase === 'CONTRACT') {
+        const item = contracts.find(c => c.id === id);
+        if (item) {
+          setSelectedContract(item);
+          setShowContractModal(true);
+        }
+      } else if (phase === 'MONTHLY') {
+        const item = monthlyReviews.find(m => m.id === id);
+        if (item) {
+          setSelectedMonthly(item);
+          setShowMonthlyModal(true);
+        }
+      } else if (phase === 'ANNUAL') {
+        const item = appraisals.find(a => a.id === id);
+        if (item) {
+          setSelectedAppraisal(item);
+          setShowAppraisalModal(true);
+        }
+      }
+      // Clear URL params after parsing to prevent re-triggering on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [contracts, monthlyReviews, appraisals]);
 
   if (!currentUser) return null;
 
@@ -38,8 +73,25 @@ export const Dashboard: React.FC = () => {
     setShowMonthlyModal(true);
   };
 
+  const handleShare = (phase: Tab, id: string) => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?phase=${phase}&id=${id}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareFeedback(id);
+      setTimeout(() => setShareFeedback(null), 2000);
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row text-slate-200 overflow-x-hidden">
+      {/* Share Toast */}
+      {shareFeedback && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-600/40 animate-bounce">
+          Deep Link Copied to Clipboard
+        </div>
+      )}
+
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between p-4 glass-card border-x-0 border-t-0 sticky top-0 z-40">
         <div className="flex items-center gap-3">
@@ -124,13 +176,13 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="flex w-full sm:w-auto gap-4">
               {activeTab === 'CONTRACT' && isEmployee && (
-                <button onClick={() => setShowContractModal(true)} className="flex-1 sm:flex-none bg-indigo-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Create Contract</button>
+                <button onClick={() => { setSelectedContract(undefined); setShowContractModal(true); }} className="flex-1 sm:flex-none bg-indigo-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Create Contract</button>
               )}
               {activeTab === 'MONTHLY' && isEmployee && (
                 <button onClick={() => handleOpenMonthly()} className="flex-1 sm:flex-none bg-slate-100 text-slate-900 px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-slate-100/10 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Log Progress</button>
               )}
               {activeTab === 'ANNUAL' && isEmployee && (
-                <button onClick={() => setShowAppraisalModal(true)} className="flex-1 sm:flex-none bg-emerald-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Start Appraisal</button>
+                <button onClick={() => { setSelectedAppraisal(undefined); setShowAppraisalModal(true); }} className="flex-1 sm:flex-none bg-emerald-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Start Appraisal</button>
               )}
             </div>
           </div>
@@ -139,7 +191,7 @@ export const Dashboard: React.FC = () => {
             {activeTab === 'CONTRACT' && (
               <div className="glass-card rounded-3xl md:rounded-[2.5rem] overflow-hidden border-white/10 shadow-2xl">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left min-w-[700px]">
+                  <table className="w-full text-left min-w-[850px]">
                     <thead className="bg-white/5 border-b border-white/5">
                       <tr>
                         <th className="px-6 md:px-8 py-4 md:py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Contract Detail</th>
@@ -190,11 +242,14 @@ export const Dashboard: React.FC = () => {
                           </td>
                           <td className="px-6 md:px-8 py-4 md:py-6 text-right">
                             <div className="flex justify-end gap-2 md:gap-3">
+                              <button onClick={() => handleShare('CONTRACT', c.id)} className="bg-white/5 text-indigo-400 p-2 rounded-xl hover:bg-indigo-500/20 transition-all border border-indigo-500/10 shadow-lg shadow-indigo-500/5">
+                                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                              </button>
                               {isPM && c.status === FormStatus.SUBMITTED && (
                                 <button onClick={() => handleApproveContract(c)} className="bg-indigo-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg">Approve</button>
                               )}
-                              <button className="bg-white/5 text-slate-400 p-2 rounded-xl hover:bg-white/10 hover:text-white transition-all">
-                                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                              <button onClick={() => { setSelectedContract(c); setShowContractModal(true); }} className="bg-white/5 text-slate-400 p-2 rounded-xl hover:bg-white/10 hover:text-white transition-all border border-white/5">
+                                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                               </button>
                             </div>
                           </td>
@@ -220,8 +275,13 @@ export const Dashboard: React.FC = () => {
                           <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">{m.tasks.length} Tasks Tracked • {new Date(m.updatedAt).toLocaleDateString()}</p>
                        </div>
                     </div>
-                    <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
-                      <span className={`px-4 py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest border ${m.status === FormStatus.SUBMITTED ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-white/5 text-slate-500 border-white/10'}`}>{m.status}</span>
+                    <div className="flex items-center justify-between md:justify-end gap-3 md:gap-6 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => handleShare('MONTHLY', m.id)} className="bg-white/5 text-indigo-400 p-3 rounded-xl hover:bg-indigo-500/20 transition-all border border-indigo-500/10">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                        </button>
+                        <span className={`px-4 py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest border ${m.status === FormStatus.SUBMITTED ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-white/5 text-slate-500 border-white/10'}`}>{m.status}</span>
+                      </div>
                       <button onClick={() => handleOpenMonthly(m)} className="bg-white text-slate-900 px-5 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:bg-slate-200 transition-all">Inspect</button>
                     </div>
                   </div>
@@ -243,12 +303,17 @@ export const Dashboard: React.FC = () => {
                           <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">Status: {a.status}</p>
                        </div>
                     </div>
-                    <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
-                      {a.status === FormStatus.CERTIFIED && (
-                        <button onClick={() => setViewingCert(a)} className="flex-1 md:flex-none bg-gradient-to-br from-amber-500 to-orange-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all">Certificate</button>
-                      )}
+                    <div className="flex items-center justify-between md:justify-end gap-3 md:gap-6 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => handleShare('ANNUAL', a.id)} className="bg-white/5 text-emerald-400 p-3 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/10">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                        </button>
+                        {a.status === FormStatus.CERTIFIED && (
+                          <button onClick={() => setViewingCert(a)} className="flex-1 md:flex-none bg-gradient-to-br from-amber-500 to-orange-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all">Certificate</button>
+                        )}
+                      </div>
                       {(isPM || isCTO) && a.status === FormStatus.SUBMITTED && (
-                        <button onClick={() => setShowAppraisalModal(true)} className="flex-1 md:flex-none bg-emerald-500 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-400 transition-all shadow-lg">Review</button>
+                        <button onClick={() => { setSelectedAppraisal(a); setShowAppraisalModal(true); }} className="flex-1 md:flex-none bg-emerald-500 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-400 transition-all shadow-lg">Review</button>
                       )}
                     </div>
                   </div>
@@ -259,9 +324,9 @@ export const Dashboard: React.FC = () => {
         </div>
       </main>
 
-      {showContractModal && <ContractForm onClose={() => setShowContractModal(false)} />}
-      {showAppraisalModal && <AppraisalForm onClose={() => setShowAppraisalModal(false)} />}
-      {showMonthlyModal && <MonthlyReviewForm onClose={() => setShowMonthlyModal(false)} initialData={selectedMonthly} />}
+      {showContractModal && <ContractForm initialData={selectedContract} onClose={() => { setShowContractModal(false); setSelectedContract(undefined); }} />}
+      {showAppraisalModal && <AppraisalForm initialData={selectedAppraisal} onClose={() => { setShowAppraisalModal(false); setSelectedAppraisal(undefined); }} />}
+      {showMonthlyModal && <MonthlyReviewForm onClose={() => { setShowMonthlyModal(false); setSelectedMonthly(undefined); }} initialData={selectedMonthly} />}
       {viewingCert && <Certificate appraisal={viewingCert as any} onClose={() => setViewingCert(null)} />}
     </div>
   );
