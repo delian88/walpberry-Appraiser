@@ -109,10 +109,15 @@ export interface PerformanceContract {
   // Signatures & Dates
   employeeSigned: boolean;
   employeeSignedDate?: number;
+  employeeSignature?: string; // base64 image data
+  
   supervisorSigned: boolean;
   supervisorSignedDate?: number;
+  supervisorSignature?: string; // base64 image data
+  
   officerSigned: boolean;
   officerSignedDate?: number;
+  officerSignature?: string; // base64 image data
   
   status: AppraisalStatus;
   isActive: boolean;

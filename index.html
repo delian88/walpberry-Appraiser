@@ -20,10 +20,11 @@
 
         body { 
           font-family: 'Plus Jakarta Sans', sans-serif; 
-          background: #021a16; /* Deep Emerald Background */
+          background: radial-gradient(circle at top right, #052c24 0%, #021a16 100%); /* Deep Emerald Background */
           color: #f8fafc;
           overflow-x: hidden;
           width: 100%;
+          min-height: 100vh;
         }
         
         .certificate-font { font-family: 'Playfair Display', serif; }
@@ -100,6 +101,15 @@
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           animation: text-reveal-slide 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards, gradient-flow 3s linear infinite;
+        }
+
+        .reveal-text {
+          animation: text-reveal-simple 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes text-reveal-simple {
+          from { opacity: 0; transform: translateX(-10px); filter: blur(4px); }
+          to { opacity: 1; transform: translateX(0); filter: blur(0); }
         }
 
         @keyframes text-reveal-slide {

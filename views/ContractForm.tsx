@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { PerformanceContract, FormStatus, KRAEntry, UserRole, CriteriaValues, CompetencyEntry, User } from '../types';
 import { DEPT_SUPERVISOR_MAP } from '../constants';
+import { SignaturePad } from '../components/SignaturePad';
 
 export const ContractForm: React.FC<{ onClose: () => void, initialData?: PerformanceContract }> = ({ onClose, initialData }) => {
   const { currentUser, users, upsertContract } = useAppContext();
@@ -176,21 +177,22 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
     let finalContract = { ...contract, updatedAt: now };
 
     if (nextStatus === FormStatus.SUBMITTED) {
-      if (!contract.periodFrom || !contract.periodTo) { alert("Please define the appraisal start and end dates."); return; }
-      if (!contract.supervisorId) { alert("Please select a Supervisor."); return; }
-      if (contract.kraEntries.length === 0) { alert("At least one Employee Task (KRA) is required."); return; }
-      if (totalWeight !== 100) { alert(`Total weight sum for Employee Tasks must be 100%. Current: ${totalWeight}%`); return; }
-      if (!contract.employeeSigned) { alert("Please sign the Appraisee section before submitting."); return; }
+      if (!contract.periodFrom || !contract.periodTo) { alert("Please define the appraisal start and end dates in Section 1."); return; }
+      if (!contract.supervisorId) { alert("Please select a Supervisor in Section 3."); return; }
+      if (contract.kraEntries.length === 0) { alert("At least one Employee Task (KRA) is required in Section 5."); return; }
+      if (totalWeight !== 100) { alert(`Total weight sum for Employee Tasks must be 100% in Section 5. Current: ${totalWeight}%`); return; }
+      if (!contract.employeeSigned || !contract.employeeSignature) { alert("Please provide your electronic signature in Section 7 before submitting."); return; }
       finalContract.employeeSignedDate = now;
     } else if (nextStatus === FormStatus.APPROVED_BY_PM) {
-      if (!contract.supervisorSigned) { alert("Please sign the Supervisor section before approving."); return; }
+      if (!contract.supervisorSigned || !contract.supervisorSignature) { alert("Please provide your electronic signature in Section 7 before approving."); return; }
       finalContract.supervisorSignedDate = now;
     } else if (nextStatus === FormStatus.APPROVED) {
-      if (!contract.officerSigned) { alert("Please sign the Officer section before final approval."); return; }
+      if (!contract.officerSigned || !contract.officerSignature) { alert("Please provide your electronic signature in Section 7 before final approval."); return; }
       finalContract.officerSignedDate = now;
     }
 
     finalContract.status = nextStatus;
+    console.log("Submitting contract with status:", nextStatus, finalContract);
     upsertContract(finalContract);
     onClose();
   };
@@ -228,15 +230,15 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
           {/* SECTION 1: Appraisal Period */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 1</span> Appraisal Period</h3>
+                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 1</span> Appraisal Period</h3>
                 <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-                    <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Start Date</label><input type="date" value={contract.periodFrom || ''} onChange={e => setContract({...contract, periodFrom: e.target.value})} disabled={!canEditEmployee} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-                    <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-2">End Date</label><input type="date" value={contract.periodTo || ''} onChange={e => setContract({...contract, periodTo: e.target.value})} disabled={!canEditEmployee} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+                    <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Start Date</label><input type="date" value={contract.periodFrom || ''} onChange={e => setContract(prev => ({...prev, periodFrom: e.target.value}))} disabled={!canEditEmployee} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+                    <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-2">End Date</label><input type="date" value={contract.periodTo || ''} onChange={e => setContract(prev => ({...prev, periodTo: e.target.value}))} disabled={!canEditEmployee} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500" /></div>
                 </div>
             </div>
             {/* SECTION 2: Employee Information */}
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 2</span> Employee Information</h3>
+                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 2</span> Employee Information</h3>
                 <div className="grid grid-cols-2 gap-4 bg-white/5 p-6 rounded-3xl border border-white/5">
                     <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">Name</label><p className="font-bold text-white text-sm truncate uppercase">{contract.employeeFirstName} {contract.employeeSurname}</p></div>
                     <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">IPPIS</label><p className="font-bold text-white text-sm">{contract.employeeIppis}</p></div>
@@ -248,7 +250,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
           {/* SECTION 3 & 4: Authorities */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 3</span> Supervisor Information</h3>
+                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 3</span> Supervisor Information</h3>
                 <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
                     <select value={contract.supervisorId || ''} onChange={e => handleSupervisorChange(e.target.value)} disabled={!canEditEmployee} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
                       <option value="">-- Select Supervisor --</option>
@@ -257,7 +259,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                 </div>
             </div>
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 4</span> Counter-Signing Officer</h3>
+                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 4</span> Counter-Signing Officer</h3>
                 <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
                     <select value={contract.officerId || ''} onChange={e => handleOfficerChange(e.target.value)} disabled={!canEditEmployee} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
                       <option value="">-- Select Officer --</option>
@@ -270,7 +272,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
           {/* SECTION 5: Task Matrix */}
           <section className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 5</span> Employee Task Matrix</h3>
+              <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 5</span> Employee Task Matrix</h3>
               {canEditEmployee && <button onClick={addKra} className="bg-emerald-600/20 text-emerald-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-600/30 transition-all">+ Add Task</button>}
             </div>
             <div className="overflow-x-auto glass-card rounded-3xl">
@@ -314,7 +316,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
 
           {/* SECTION 6: Competency Assessment */}
           <section className="space-y-8">
-            <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 6</span> Competency Assessment</h3>
+            <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 6</span> Competency Assessment</h3>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
                 {/* Scale Legend */}
                 <div className="lg:col-span-1 space-y-8">
@@ -398,7 +400,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
 
           {/* SECTION 7: Comments & Final Signatures */}
           <section className="space-y-10">
-            <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 7</span> Comments</h3>
+            <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 reveal-text"><span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono">SECTION 7</span> Comments</h3>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* i. Appraisee (Employee) */}
@@ -411,10 +413,17 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                   <label className="text-[9px] text-slate-500 font-black uppercase mb-2 block">Reflection on Targets</label>
                   <textarea 
                     value={contract.employeeComment} 
-                    onChange={e => setContract({...contract, employeeComment: e.target.value})} 
+                    onChange={e => setContract(prev => ({...prev, employeeComment: e.target.value}))} 
                     disabled={!canEditEmployee}
-                    className="w-full h-32 bg-slate-900/40 border border-white/5 rounded-2xl p-4 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-700"
+                    className="w-full h-32 bg-slate-900/40 border border-white/5 rounded-2xl p-4 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-700 mb-6"
                     placeholder="Provide your feedback on the defined contract period..."
+                  />
+                  
+                  <label className="text-[9px] text-slate-500 font-black uppercase mb-3 block">ii. Electronic Signature</label>
+                  <SignaturePad 
+                    initialValue={contract.employeeSignature}
+                    onSave={(sig) => setContract(prev => ({...prev, employeeSignature: sig, employeeSigned: !!sig}))} 
+                    disabled={!canEditEmployee}
                   />
                 </div>
                 <div className="pt-6 border-t border-white/5 space-y-4">
@@ -423,11 +432,10 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                       type="checkbox" 
                       id="employee-sig"
                       checked={contract.employeeSigned} 
-                      onChange={e => setContract({...contract, employeeSigned: e.target.checked})} 
-                      disabled={!canEditEmployee}
-                      className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-emerald-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed" 
+                      readOnly
+                      className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-emerald-600 focus:ring-0 cursor-not-allowed" 
                     />
-                    <label htmlFor="employee-sig" className="text-[10px] text-slate-400 font-black uppercase tracking-widest cursor-pointer">ii. Signature (Appraisee)</label>
+                    <label htmlFor="employee-sig" className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Signed Status</label>
                   </div>
                   {contract.employeeSignedDate ? (
                     <div>
@@ -435,7 +443,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                         <p className="text-[10px] text-white font-mono bg-white/5 inline-block px-3 py-1 rounded-lg border border-white/5">{new Date(contract.employeeSignedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                     </div>
                   ) : (
-                    <div className="h-10 border border-dashed border-white/5 rounded-xl flex items-center justify-center"><span className="text-[8px] text-slate-700 uppercase font-black tracking-widest">Pending Signature</span></div>
+                    <div className="h-10 border border-dashed border-white/5 rounded-xl flex items-center justify-center"><span className="text-[8px] text-slate-700 uppercase font-black tracking-widest">Pending Capture</span></div>
                   )}
                 </div>
               </div>
@@ -450,10 +458,17 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                   <label className="text-[9px] text-slate-500 font-black uppercase mb-2 block">Assessment Remarks</label>
                   <textarea 
                     value={contract.supervisorComment} 
-                    onChange={e => setContract({...contract, supervisorComment: e.target.value})} 
+                    onChange={e => setContract(prev => ({...prev, supervisorComment: e.target.value}))} 
                     disabled={!canEditSupervisor}
-                    className="w-full h-32 bg-slate-900/40 border border-white/5 rounded-2xl p-4 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-700"
+                    className="w-full h-32 bg-slate-900/40 border border-white/5 rounded-2xl p-4 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-700 mb-6"
                     placeholder="Official supervisor feedback..."
+                  />
+                  
+                  <label className="text-[9px] text-slate-500 font-black uppercase mb-3 block">ii. Electronic Signature</label>
+                  <SignaturePad 
+                    initialValue={contract.supervisorSignature}
+                    onSave={(sig) => setContract(prev => ({...prev, supervisorSignature: sig, supervisorSigned: !!sig}))} 
+                    disabled={!canEditSupervisor}
                   />
                 </div>
                 <div className="pt-6 border-t border-white/5 space-y-4">
@@ -462,11 +477,10 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                       type="checkbox" 
                       id="supervisor-sig"
                       checked={contract.supervisorSigned} 
-                      onChange={e => setContract({...contract, supervisorSigned: e.target.checked})} 
-                      disabled={!canEditSupervisor}
-                      className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-emerald-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed" 
+                      readOnly
+                      className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-emerald-600 focus:ring-0 cursor-not-allowed" 
                     />
-                    <label htmlFor="supervisor-sig" className="text-[10px] text-slate-400 font-black uppercase tracking-widest cursor-pointer">ii. Signature (Supervisor)</label>
+                    <label htmlFor="supervisor-sig" className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Signed Status</label>
                   </div>
                   {contract.supervisorSignedDate ? (
                     <div>
@@ -474,7 +488,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                         <p className="text-[10px] text-white font-mono bg-white/5 inline-block px-3 py-1 rounded-lg border border-white/5">{new Date(contract.supervisorSignedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                     </div>
                   ) : (
-                    <div className="h-10 border border-dashed border-white/5 rounded-xl flex items-center justify-center"><span className="text-[8px] text-slate-700 uppercase font-black tracking-widest">Pending Signature</span></div>
+                    <div className="h-10 border border-dashed border-white/5 rounded-xl flex items-center justify-center"><span className="text-[8px] text-slate-700 uppercase font-black tracking-widest">Pending Capture</span></div>
                   )}
                 </div>
               </div>
@@ -489,10 +503,17 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                   <label className="text-[9px] text-slate-500 font-black uppercase mb-2 block">Oversight Remarks</label>
                   <textarea 
                     value={contract.officerComment} 
-                    onChange={e => setContract({...contract, officerComment: e.target.value})} 
+                    onChange={e => setContract(prev => ({...prev, officerComment: e.target.value}))} 
                     disabled={!canEditOfficer}
-                    className="w-full h-32 bg-slate-900/40 border border-white/5 rounded-2xl p-4 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-700"
+                    className="w-full h-32 bg-slate-900/40 border border-white/5 rounded-2xl p-4 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-700 mb-6"
                     placeholder="Management oversight remarks..."
+                  />
+                  
+                  <label className="text-[9px] text-slate-500 font-black uppercase mb-3 block">ii. Electronic Signature</label>
+                  <SignaturePad 
+                    initialValue={contract.officerSignature}
+                    onSave={(sig) => setContract(prev => ({...prev, officerSignature: sig, officerSigned: !!sig}))} 
+                    disabled={!canEditOfficer}
                   />
                 </div>
                 <div className="pt-6 border-t border-white/5 space-y-4">
@@ -501,11 +522,10 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                       type="checkbox" 
                       id="officer-sig"
                       checked={contract.officerSigned} 
-                      onChange={e => setContract({...contract, officerSigned: e.target.checked})} 
-                      disabled={!canEditOfficer}
-                      className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-emerald-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed" 
+                      readOnly
+                      className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-emerald-600 focus:ring-0 cursor-not-allowed" 
                     />
-                    <label htmlFor="officer-sig" className="text-[10px] text-slate-400 font-black uppercase tracking-widest cursor-pointer">ii. Signature (Officer)</label>
+                    <label htmlFor="officer-sig" className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Signed Status</label>
                   </div>
                   {contract.officerSignedDate ? (
                     <div>
@@ -513,7 +533,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                         <p className="text-[10px] text-white font-mono bg-white/5 inline-block px-3 py-1 rounded-lg border border-white/5">{new Date(contract.officerSignedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                     </div>
                   ) : (
-                    <div className="h-10 border border-dashed border-white/5 rounded-xl flex items-center justify-center"><span className="text-[8px] text-slate-700 uppercase font-black tracking-widest">Pending Signature</span></div>
+                    <div className="h-10 border border-dashed border-white/5 rounded-xl flex items-center justify-center"><span className="text-[8px] text-slate-700 uppercase font-black tracking-widest">Pending Capture</span></div>
                   )}
                 </div>
               </div>
@@ -525,17 +545,37 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
         <div className="p-8 md:p-12 bg-white/5 border-t border-white/5 flex flex-col sm:flex-row justify-end gap-6">
           {isEmployee && isDraft && (
             <>
-              <button onClick={() => handleSubmit(FormStatus.DRAFT)} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.3em]">Save Progress</button>
-              <button onClick={() => handleSubmit(FormStatus.SUBMITTED)} className={`px-14 py-5 font-black rounded-2xl shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container ${contract.employeeSigned ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>Confirm & Submit Contract</button>
+              <button 
+                onClick={() => handleSubmit(FormStatus.DRAFT)} 
+                className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.3em]"
+              >
+                Save Progress
+              </button>
+              <button 
+                onClick={() => handleSubmit(FormStatus.SUBMITTED)} 
+                className={`px-14 py-5 font-black rounded-2xl shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container ${contract.employeeSigned ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-800 text-slate-400 border border-white/5'}`}
+              >
+                Confirm & Submit Contract
+              </button>
             </>
           )}
 
           {isPM && isSubmitted && (
-             <button onClick={() => handleSubmit(FormStatus.APPROVED_BY_PM)} className="px-14 py-5 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container">Supervisor Approval</button>
+             <button 
+               onClick={() => handleSubmit(FormStatus.APPROVED_BY_PM)} 
+               className={`px-14 py-5 font-black rounded-2xl shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container ${contract.supervisorSigned ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-800 text-slate-400 border border-white/5'}`}
+             >
+               Supervisor Approval
+             </button>
           )}
 
           {isCTO && isPMApproved && (
-             <button onClick={() => handleSubmit(FormStatus.APPROVED)} className="px-14 py-5 bg-teal-600 text-white font-black rounded-2xl hover:bg-teal-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container">Finalize & Activate Contract</button>
+             <button 
+               onClick={() => handleSubmit(FormStatus.APPROVED)} 
+               className={`px-14 py-5 font-black rounded-2xl shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container ${contract.officerSigned ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-800 text-slate-400 border border-white/5'}`}
+             >
+               Finalize & Activate Contract
+             </button>
           )}
 
           <button onClick={onClose} className="px-12 py-5 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.3em]">Exit View</button>
