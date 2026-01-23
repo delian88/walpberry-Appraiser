@@ -11,7 +11,11 @@ import { HRDashboard } from './HRDashboard';
 type Tab = 'CONTRACT' | 'MONTHLY' | 'ANNUAL' | 'HR';
 
 export const Dashboard: React.FC = () => {
-  const { currentUser, contracts, appraisals, monthlyReviews, logout, upsertContract, showToast } = useAppContext();
+  const { 
+    currentUser, contracts, appraisals, monthlyReviews, logout, 
+    upsertContract, showToast, isLoading, dbStatus, refreshData 
+  } = useAppContext();
+  
   const [activeTab, setActiveTab] = useState<Tab>(currentUser?.role === UserRole.ADMIN ? 'HR' : 'CONTRACT');
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedContract, setSelectedContract] = useState<PerformanceContract | undefined>(undefined);
@@ -22,7 +26,6 @@ export const Dashboard: React.FC = () => {
   const [viewingCert, setViewingCert] = useState<AnnualAppraisal | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Handle deep linking from shareable URLs
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const phase = params.get('phase') as Tab | null;
@@ -31,8 +34,7 @@ export const Dashboard: React.FC = () => {
     if (!phase || !id) return;
 
     let found = false;
-    // Check if data is actually loaded before attempting to find or clearing params
-    const isDataLoaded = contracts.length > 0 || monthlyReviews.length > 0 || appraisals.length > 0;
+    const isDataLoaded = !isLoading;
 
     if (phase === 'CONTRACT') {
       const item = contracts.find(c => c.id === id);
@@ -60,12 +62,11 @@ export const Dashboard: React.FC = () => {
       }
     }
 
-    // Only clear the URL if we found the item OR if data is loaded and we definitely didn't find it
     if (found || isDataLoaded) {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
-  }, [contracts, monthlyReviews, appraisals]);
+  }, [contracts, monthlyReviews, appraisals, isLoading]);
 
   if (!currentUser) return null;
 
@@ -78,8 +79,8 @@ export const Dashboard: React.FC = () => {
   const userAppraisals = appraisals.filter(a => isEmployee ? a.employeeId === currentUser.id : true);
   const userMonthly = monthlyReviews.filter(r => isEmployee ? r.employeeId === currentUser.id : true);
 
-  const handleApproveContract = (contract: PerformanceContract) => {
-    upsertContract({ ...contract, status: FormStatus.APPROVED });
+  const handleApproveContract = async (contract: PerformanceContract) => {
+    await upsertContract({ ...contract, status: FormStatus.APPROVED });
   };
 
   const handleOpenMonthly = (review?: MonthlyReview) => {
@@ -88,19 +89,28 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleShare = (phase: Tab, id: string) => {
-    // Robustly get the base URL without query parameters
     const baseUrl = window.location.href.split('?')[0];
     const shareUrl = `${baseUrl}?phase=${phase}&id=${id}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
       showToast("Shareable deep-link copied!", "success");
     }).catch(err => {
-      console.error('Failed to copy share link: ', err);
       showToast("Failed to copy link", "error");
     });
   };
 
   const menuItems: Tab[] = isAdmin ? ['HR', 'CONTRACT', 'MONTHLY', 'ANNUAL'] : ['CONTRACT', 'MONTHLY', 'ANNUAL'];
+
+  if (isLoading && contracts.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center space-y-6">
+           <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
+           <p className="text-[10px] uppercase font-black tracking-[0.5em] text-emerald-400">Connecting to PostgreSQL...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row text-slate-200 overflow-x-hidden">
@@ -110,14 +120,17 @@ export const Dashboard: React.FC = () => {
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex items-center justify-center font-black italic text-xl shadow-lg">W</div>
           <span className="font-black text-lg tracking-tight text-white">Walpberry</span>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 bg-white/5 rounded-xl border border-white/10"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-          </svg>
-        </button>
+        <div className="flex items-center gap-4">
+           <div className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-emerald-500' : dbStatus === 'error' ? 'bg-red-500' : 'bg-amber-500'} shadow-lg shadow-emerald-500/20`}></div>
+           <button 
+             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+             className="p-2 bg-white/5 rounded-xl border border-white/10"
+           >
+             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+             </svg>
+           </button>
+        </div>
       </header>
 
       {/* Sidebar (Desktop) */}
@@ -126,7 +139,10 @@ export const Dashboard: React.FC = () => {
           <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl flex items-center justify-center font-black italic text-2xl shadow-lg shadow-emerald-500/20">W</div>
           <div>
             <span className="font-black text-xl tracking-tight block text-white">Walpberry</span>
-            <span className="text-[10px] uppercase tracking-[0.3em] text-emerald-400 font-bold">Appraiser</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-emerald-400 font-bold">Appraiser</span>
+              <div className={`w-1.5 h-1.5 rounded-full ${dbStatus === 'connected' ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`}></div>
+            </div>
           </div>
         </div>
 
@@ -161,7 +177,12 @@ export const Dashboard: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 md:mb-12">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none uppercase text-transition">{activeTab === 'HR' ? 'HR Central' : activeTab}</h1>
+              <div className="flex items-center gap-4">
+                 <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none uppercase text-transition">{activeTab === 'HR' ? 'HR Central' : activeTab}</h1>
+                 {dbStatus !== 'connected' && (
+                    <button onClick={refreshData} className="p-2 bg-amber-500/20 text-amber-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-500/20 hover:bg-amber-500/30 transition-all">Retry Sync</button>
+                 )}
+              </div>
               <p className="text-slate-400 mt-2 font-medium text-sm md:text-base">
                 {activeTab === 'HR' ? 'Complete organizational oversight and user management.' : 'Sequential performance approval workflow.'}
               </p>
@@ -182,7 +203,14 @@ export const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 gap-6">
             {activeTab === 'HR' && <HRDashboard />}
             
-            {activeTab === 'CONTRACT' && (
+            {(activeTab === 'CONTRACT' || activeTab === 'MONTHLY' || activeTab === 'ANNUAL') && isLoading && userContracts.length === 0 && (
+                <div className="py-20 text-center space-y-4">
+                   <div className="w-10 h-10 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
+                   <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Syncing with system...</p>
+                </div>
+            )}
+
+            {activeTab === 'CONTRACT' && !isLoading && (
               <div className="glass-card rounded-3xl md:rounded-[2.5rem] overflow-hidden border-white/10 shadow-2xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left min-w-[850px]">
@@ -198,7 +226,7 @@ export const Dashboard: React.FC = () => {
                     <tbody className="divide-y divide-white/5">
                       {userContracts.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="py-24 md:py-32 text-center text-slate-500 font-bold uppercase tracking-widest text-xs md:text-sm">No contracts found.</td>
+                          <td colSpan={5} className="py-24 md:py-32 text-center text-slate-500 font-bold uppercase tracking-widest text-xs md:text-sm">No contracts found in database.</td>
                         </tr>
                       )}
                       {userContracts.map(c => (
@@ -258,7 +286,7 @@ export const Dashboard: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'MONTHLY' && (
+            {activeTab === 'MONTHLY' && !isLoading && (
               <>
                 {userMonthly.length === 0 && <div className="text-center py-24 md:py-32 glass-card rounded-3xl md:rounded-[2.5rem] border-dashed border-white/10 text-slate-500 font-bold uppercase tracking-widest text-xs">No progress logs found.</div>}
                 {userMonthly.map(m => (
@@ -286,7 +314,7 @@ export const Dashboard: React.FC = () => {
               </>
             )}
 
-            {activeTab === 'ANNUAL' && (
+            {activeTab === 'ANNUAL' && !isLoading && (
               <>
                 {userAppraisals.length === 0 && <div className="text-center py-24 md:py-32 glass-card rounded-3xl md:rounded-[2.5rem] border-dashed border-white/10 text-slate-500 font-bold uppercase tracking-widest text-xs">Appraisal cycle not initiated.</div>}
                 {userAppraisals.map(a => (
