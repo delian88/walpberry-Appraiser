@@ -78,6 +78,7 @@ export interface PerformanceContract {
   employeeDesignation: string;
   employeeDepartment: string;
   // Section C
+  supervisorId?: string;
   supervisorFirstName: string;
   supervisorSurname: string;
   supervisorOtherNames?: string;
@@ -86,6 +87,7 @@ export interface PerformanceContract {
   supervisorDesignation: string;
   supervisorDepartment: string;
   // Section D
+  officerId?: string;
   officerFirstName: string;
   officerSurname: string;
   officerOtherNames?: string;

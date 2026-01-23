@@ -6,12 +6,13 @@ import { ContractForm } from './ContractForm';
 import { AppraisalForm } from './AppraisalForm';
 import { MonthlyReviewForm } from './MonthlyReviewForm';
 import { Certificate } from './Certificate';
+import { HRDashboard } from './HRDashboard';
 
-type Tab = 'CONTRACT' | 'MONTHLY' | 'ANNUAL';
+type Tab = 'CONTRACT' | 'MONTHLY' | 'ANNUAL' | 'HR';
 
 export const Dashboard: React.FC = () => {
   const { currentUser, contracts, appraisals, monthlyReviews, logout, upsertContract } = useAppContext();
-  const [activeTab, setActiveTab] = useState<Tab>('CONTRACT');
+  const [activeTab, setActiveTab] = useState<Tab>(currentUser?.role === UserRole.ADMIN ? 'HR' : 'CONTRACT');
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedContract, setSelectedContract] = useState<PerformanceContract | undefined>(undefined);
   const [showAppraisalModal, setShowAppraisalModal] = useState(false);
@@ -22,7 +23,6 @@ export const Dashboard: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
-  // Deep Link Parser
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const phase = params.get('phase') as Tab | null;
@@ -49,7 +49,6 @@ export const Dashboard: React.FC = () => {
           setShowAppraisalModal(true);
         }
       }
-      // Clear URL params after parsing to prevent re-triggering on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [contracts, monthlyReviews, appraisals]);
@@ -59,6 +58,7 @@ export const Dashboard: React.FC = () => {
   const isEmployee = currentUser.role === UserRole.EMPLOYEE;
   const isPM = currentUser.role === UserRole.PM;
   const isCTO = currentUser.role === UserRole.CTO;
+  const isAdmin = currentUser.role === UserRole.ADMIN;
 
   const userContracts = contracts.filter(c => isEmployee ? c.employeeId === currentUser.id : true);
   const userAppraisals = appraisals.filter(a => isEmployee ? a.employeeId === currentUser.id : true);
@@ -83,11 +83,13 @@ export const Dashboard: React.FC = () => {
     });
   };
 
+  const menuItems: Tab[] = isAdmin ? ['HR', 'CONTRACT', 'MONTHLY', 'ANNUAL'] : ['CONTRACT', 'MONTHLY', 'ANNUAL'];
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row text-slate-200 overflow-x-hidden">
       {/* Share Toast */}
       {shareFeedback && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-600/40 animate-bounce">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-600/40 animate-bounce">
           Deep Link Copied to Clipboard
         </div>
       )}
@@ -112,14 +114,14 @@ export const Dashboard: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-30 glass-modal pt-20 px-4">
           <nav className="space-y-4">
-            {(['CONTRACT', 'MONTHLY', 'ANNUAL'] as Tab[]).map(t => (
+            {menuItems.map(t => (
               <button
                 key={t}
                 onClick={() => { setActiveTab(t); setIsMobileMenuOpen(false); }}
                 className={`w-full text-left px-6 py-5 rounded-2xl font-bold transition-all text-base flex items-center gap-4 ${activeTab === t ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg' : 'text-slate-400'}`}
               >
                 <div className={`w-2.5 h-2.5 rounded-full ${activeTab === t ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]' : 'bg-slate-700'}`}></div>
-                {t.charAt(0) + t.slice(1).toLowerCase()} Phase
+                {t === 'HR' ? 'HR Central' : t.charAt(0) + t.slice(1).toLowerCase() + ' Phase'}
               </button>
             ))}
             <button onClick={logout} className="w-full flex items-center gap-4 text-red-400 font-bold text-base px-6 py-5 rounded-2xl bg-red-400/5 mt-8 border border-red-400/10">
@@ -141,14 +143,14 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <nav className="flex-1 space-y-3">
-          {(['CONTRACT', 'MONTHLY', 'ANNUAL'] as Tab[]).map(t => (
+          {menuItems.map(t => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
               className={`w-full text-left px-5 py-4 rounded-2xl font-bold transition-all text-sm flex items-center gap-4 ${activeTab === t ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg shadow-indigo-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
             >
               <div className={`w-2 h-2 rounded-full ${activeTab === t ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]' : 'bg-slate-700'}`}></div>
-              {t.charAt(0) + t.slice(1).toLowerCase()} Phase
+              {t === 'HR' ? 'HR Central' : t.charAt(0) + t.slice(1).toLowerCase() + ' Phase'}
             </button>
           ))}
         </nav>
@@ -171,8 +173,10 @@ export const Dashboard: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 md:mb-12">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none uppercase">{activeTab}</h1>
-              <p className="text-slate-400 mt-2 font-medium text-sm md:text-base">Sequential performance approval workflow.</p>
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none uppercase">{activeTab === 'HR' ? 'HR Central' : activeTab}</h1>
+              <p className="text-slate-400 mt-2 font-medium text-sm md:text-base">
+                {activeTab === 'HR' ? 'Complete organizational oversight and user management.' : 'Sequential performance approval workflow.'}
+              </p>
             </div>
             <div className="flex w-full sm:w-auto gap-4">
               {activeTab === 'CONTRACT' && isEmployee && (
@@ -188,6 +192,8 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-6">
+            {activeTab === 'HR' && <HRDashboard />}
+            
             {activeTab === 'CONTRACT' && (
               <div className="glass-card rounded-3xl md:rounded-[2.5rem] overflow-hidden border-white/10 shadow-2xl">
                 <div className="overflow-x-auto">
@@ -214,7 +220,10 @@ export const Dashboard: React.FC = () => {
                               <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-all">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                               </div>
-                              <span className="font-black text-white text-sm md:text-base">Contract {new Date(c.updatedAt).getFullYear()}</span>
+                              <div>
+                                <span className="font-black text-white text-sm md:text-base block">Contract {new Date(c.updatedAt).getFullYear()}</span>
+                                {!isEmployee && <span className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">{c.employeeFirstName} {c.employeeSurname}</span>}
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 md:px-8 py-4 md:py-6">
@@ -312,7 +321,7 @@ export const Dashboard: React.FC = () => {
                           <button onClick={() => setViewingCert(a)} className="flex-1 md:flex-none bg-gradient-to-br from-amber-500 to-orange-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all">Certificate</button>
                         )}
                       </div>
-                      {(isPM || isCTO) && a.status === FormStatus.SUBMITTED && (
+                      {(isPM || isCTO || isAdmin) && a.status === FormStatus.SUBMITTED && (
                         <button onClick={() => { setSelectedAppraisal(a); setShowAppraisalModal(true); }} className="flex-1 md:flex-none bg-emerald-500 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-400 transition-all shadow-lg">Review</button>
                       )}
                     </div>

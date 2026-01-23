@@ -15,6 +15,18 @@ export const MOCK_USERS: User[] = [
     department: 'Engineering' 
   },
   { 
+    id: 'emp-2', 
+    name: 'Sarah Jane', 
+    surname: 'Jane',
+    firstName: 'Sarah',
+    ippisNumber: 'IP-9002',
+    email: 'sarah@walpberry.com', 
+    phone: '08022223333',
+    role: UserRole.EMPLOYEE, 
+    designation: 'UI Designer',
+    department: 'Design' 
+  },
+  { 
     id: 'pm-1', 
     name: 'John Adewale', 
     surname: 'Adewale',
@@ -24,7 +36,19 @@ export const MOCK_USERS: User[] = [
     phone: '08088887777',
     role: UserRole.PM, 
     designation: 'Senior Project Manager',
-    department: 'Project Management' 
+    department: 'Engineering' 
+  },
+  { 
+    id: 'pm-2', 
+    name: 'Amaka Obi', 
+    surname: 'Obi',
+    firstName: 'Amaka',
+    ippisNumber: 'IP-2002',
+    email: 'amaka.obi@walpberry.com', 
+    phone: '08033334444',
+    role: UserRole.PM, 
+    designation: 'Design Lead',
+    department: 'Design' 
   },
   { 
     id: 'cto-1', 
@@ -38,9 +62,20 @@ export const MOCK_USERS: User[] = [
     designation: 'Chief Technology Officer',
     department: 'Executive' 
   },
+  { 
+    id: 'hr-1', 
+    name: 'Admin User', 
+    surname: 'Admin',
+    firstName: 'System',
+    ippisNumber: 'HR-0001',
+    email: 'hr@walpberry.com', 
+    phone: '010000000',
+    role: UserRole.ADMIN, 
+    designation: 'HR Director',
+    department: 'Human Resources' 
+  },
 ];
 
-// Fixed: Added missing STATUS_LABELS member required by StatusBadge.tsx
 export const STATUS_LABELS: Record<string, { label: string, color: string }> = {
   [AppraisalStatus.DRAFT]: { label: 'Draft', color: 'bg-slate-100 text-slate-600' },
   [AppraisalStatus.SUBMITTED]: { label: 'Submitted', color: 'bg-blue-100 text-blue-600' },
@@ -60,4 +95,13 @@ export const getRating = (score: number) => {
   return 'Poor';
 };
 
-export const DEPARTMENTS = ['Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'HR'];
+export const DEPARTMENTS = ['Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'HR', 'Executive'];
+
+// Mapping departments to default supervisors (PMs)
+export const DEPT_SUPERVISOR_MAP: Record<string, string> = {
+  'Engineering': 'pm-1',
+  'Design': 'pm-2',
+  'Product': 'pm-1',
+  'Marketing': 'pm-2',
+  'Sales': 'pm-1',
+};

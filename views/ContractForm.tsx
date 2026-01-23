@@ -1,10 +1,14 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { PerformanceContract, FormStatus, KRAEntry, UserRole, CriteriaValues, CompetencyEntry } from '../types';
+import { PerformanceContract, FormStatus, KRAEntry, UserRole, CriteriaValues, CompetencyEntry, User } from '../types';
+import { DEPT_SUPERVISOR_MAP } from '../constants';
 
 export const ContractForm: React.FC<{ onClose: () => void, initialData?: PerformanceContract }> = ({ onClose, initialData }) => {
-  const { currentUser, upsertContract } = useAppContext();
+  const { currentUser, users, upsertContract } = useAppContext();
+
+  const supervisors = useMemo(() => users.filter(u => u.role === UserRole.PM || u.role === UserRole.CTO), [users]);
+  const ctos = useMemo(() => users.filter(u => u.role === UserRole.CTO), [users]);
 
   // Initial competencies
   const defaultCompetencies: CompetencyEntry[] = [
@@ -28,16 +32,19 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
     employeePhone: currentUser?.phone || '',
     employeeDesignation: currentUser?.designation || '',
     employeeDepartment: currentUser?.department || '',
-    supervisorFirstName: 'John',
-    supervisorSurname: 'Adewale',
-    supervisorIppis: 'IP-2001',
-    supervisorEmail: 'john.adewale@walpberry.com',
-    supervisorDesignation: 'Senior Project Manager',
-    supervisorDepartment: 'Engineering',
-    officerFirstName: 'Victor',
-    officerSurname: 'Idowu',
-    officerIppis: 'IP-1001',
-    officerDesignation: 'Chief Technology Officer',
+    
+    supervisorFirstName: '',
+    supervisorSurname: '',
+    supervisorIppis: '',
+    supervisorEmail: '',
+    supervisorDesignation: '',
+    supervisorDepartment: '',
+    
+    officerFirstName: '',
+    officerSurname: '',
+    officerIppis: '',
+    officerDesignation: '',
+    
     kraEntries: [],
     competencyEntries: defaultCompetencies,
     employeeSigned: false,
@@ -48,14 +55,54 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
     updatedAt: Date.now()
   });
 
-  const isEmployee = currentUser?.role === UserRole.EMPLOYEE;
-  const isPM = currentUser?.role === UserRole.PM;
-  const isCTO = currentUser?.role === UserRole.CTO;
-  
-  const isDraft = contract.status === FormStatus.DRAFT;
-  const isSubmitted = contract.status === FormStatus.SUBMITTED;
-  const isApproved = contract.status === FormStatus.APPROVED;
+  // Auto-assign supervisor based on department if not already set
+  useEffect(() => {
+    if (!initialData && contract.employeeDepartment) {
+      const supId = DEPT_SUPERVISOR_MAP[contract.employeeDepartment];
+      if (supId) {
+        handleSupervisorChange(supId);
+      }
+      // Auto-assign first CTO as counter-signing officer
+      if (ctos.length > 0) {
+        handleOfficerChange(ctos[0].id);
+      }
+    }
+  }, []);
 
+  const handleSupervisorChange = (id: string) => {
+    const user = users.find(u => u.id === id);
+    if (user) {
+      setContract(prev => ({
+        ...prev,
+        supervisorId: user.id,
+        supervisorFirstName: user.firstName,
+        supervisorSurname: user.surname,
+        supervisorOtherNames: user.otherNames,
+        supervisorIppis: user.ippisNumber,
+        supervisorEmail: user.email,
+        supervisorDesignation: user.designation,
+        supervisorDepartment: user.department
+      }));
+    }
+  };
+
+  const handleOfficerChange = (id: string) => {
+    const user = users.find(u => u.id === id);
+    if (user) {
+      setContract(prev => ({
+        ...prev,
+        officerId: user.id,
+        officerFirstName: user.firstName,
+        officerSurname: user.surname,
+        officerOtherNames: user.otherNames,
+        officerIppis: user.ippisNumber,
+        officerDesignation: user.designation
+      }));
+    }
+  };
+
+  const isEmployee = currentUser?.role === UserRole.EMPLOYEE;
+  const isDraft = contract.status === FormStatus.DRAFT;
   const canEditMain = isEmployee && isDraft;
 
   const totalWeight = useMemo(() => 
@@ -112,6 +159,10 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
         alert("Please define the appraisal start and end dates.");
         return;
       }
+      if (!contract.supervisorId) {
+        alert("Please select a Supervisor.");
+        return;
+      }
       if (contract.kraEntries.length === 0) {
         alert("At least one Employee Task (KRA) is required.");
         return;
@@ -132,8 +183,6 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
       status: nextStatus,
       updatedAt: now,
       employeeSignedDate: contract.employeeSigned && !contract.employeeSignedDate ? now : contract.employeeSignedDate,
-      supervisorSignedDate: contract.supervisorSigned && !contract.supervisorSignedDate ? now : contract.supervisorSignedDate,
-      officerSignedDate: contract.officerSigned && !contract.officerSignedDate ? now : contract.officerSignedDate,
     };
     
     upsertContract(payload);
@@ -171,9 +220,8 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                   type="date" 
                   value={contract.periodFrom || ''} 
                   onChange={e => setContract({...contract, periodFrom: e.target.value})}
-                  onFocus={(e) => (e.target as any).showPicker?.()}
                   disabled={!canEditMain}
-                  className={`w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 ${canEditMain ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -182,9 +230,8 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                   type="date" 
                   value={contract.periodTo || ''} 
                   onChange={e => setContract({...contract, periodTo: e.target.value})}
-                  onFocus={(e) => (e.target as any).showPicker?.()}
                   disabled={!canEditMain}
-                  className={`w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 ${canEditMain ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
@@ -212,13 +259,29 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
               <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">C</span>
               Supervisor Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.supervisorSurname}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.supervisorFirstName}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.supervisorIppis}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Email</label><p className="font-bold text-white italic">{contract.supervisorEmail}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.supervisorDesignation}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label><p className="font-bold text-white uppercase">{contract.supervisorDepartment}</p></div>
+            <div className="space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div className="max-w-md">
+                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Select Supervisor</label>
+                <select 
+                  value={contract.supervisorId || ''} 
+                  onChange={e => handleSupervisorChange(e.target.value)}
+                  disabled={!canEditMain}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">-- Choose Supervisor --</option>
+                  {supervisors.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.department})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-4 border-t border-white/5">
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.supervisorSurname || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.supervisorFirstName || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.supervisorIppis || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Email</label><p className="font-bold text-white italic">{contract.supervisorEmail || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.supervisorDesignation || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label><p className="font-bold text-white uppercase">{contract.supervisorDepartment || '...'}</p></div>
+              </div>
             </div>
           </section>
 
@@ -228,11 +291,27 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
               <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">D</span>
               Counter-Signing Officers Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.officerSurname}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.officerFirstName}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.officerIppis}</p></div>
-              <div className="md:col-span-2"><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.officerDesignation}</p></div>
+            <div className="space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div className="max-w-md">
+                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Select Officer</label>
+                <select 
+                  value={contract.officerId || ''} 
+                  onChange={e => handleOfficerChange(e.target.value)}
+                  disabled={!canEditMain}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">-- Choose Officer --</option>
+                  {ctos.map(o => (
+                    <option key={o.id} value={o.id}>{o.name} ({o.designation})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-4 border-t border-white/5">
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.officerSurname || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.officerFirstName || '...'}</p></div>
+                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.officerIppis || '...'}</p></div>
+                <div className="md:col-span-2"><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.officerDesignation || '...'}</p></div>
+              </div>
             </div>
           </section>
 
