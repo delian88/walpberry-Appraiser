@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { User, UserRole, AppraisalStatus, PerformanceContract, AnnualAppraisal } from '../types';

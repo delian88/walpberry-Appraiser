@@ -53,6 +53,7 @@ export interface KRAEntry {
   kpis: string;
   target: number;
   unit: 'Percentage' | 'Quantity' | 'Rating' | 'Time-based';
+  expectation?: string;
 }
 
 export interface CompetencyEntry {
@@ -61,15 +62,16 @@ export interface CompetencyEntry {
   description: string;
   score: number;
   category: 'Generic' | 'Functional' | 'Ethics' | 'Operations';
+  expectation?: string;
 }
 
 export interface PerformanceContract {
   id: string;
   employeeId: string;
-  // Section A
+  // Section A (1)
   periodFrom: string;
   periodTo: string;
-  // Section B
+  // Section B (2)
   employeeFirstName: string;
   employeeSurname: string;
   employeeOtherNames?: string;
@@ -78,7 +80,7 @@ export interface PerformanceContract {
   employeePhone: string;
   employeeDesignation: string;
   employeeDepartment: string;
-  // Section C
+  // Section C (3)
   supervisorId?: string;
   supervisorFirstName: string;
   supervisorSurname: string;
@@ -87,18 +89,24 @@ export interface PerformanceContract {
   supervisorEmail: string;
   supervisorDesignation: string;
   supervisorDepartment: string;
-  // Section D
+  // Section D (4)
   officerId?: string;
   officerFirstName: string;
   officerSurname: string;
   officerOtherNames?: string;
   officerIppis: string;
   officerDesignation: string;
-  // Section E (Employee Task)
+  // Section E (5)
   kraEntries: KRAEntry[];
-  // Section F (Competencies)
+  // Section F (6)
   competencyEntries: CompetencyEntry[];
-  // Declarations
+  
+  // Section G (7) - Comments & Final Signatures
+  employeeComment?: string;
+  supervisorComment?: string;
+  officerComment?: string;
+
+  // Signatures & Dates
   employeeSigned: boolean;
   employeeSignedDate?: number;
   supervisorSigned: boolean;

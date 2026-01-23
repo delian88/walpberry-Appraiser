@@ -4,21 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Walpberry Appraiser</title>
+    <title>Walpberry Appraiser | Emerald Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-bg: rgba(255, 255, 255, 0.02);
             --glass-border: rgba(255, 255, 255, 0.08);
             --glass-highlight: rgba(255, 255, 255, 0.05);
+            --primary-green: #10b981;
+            --deep-green: #022c22;
         }
 
         body { 
           font-family: 'Plus Jakarta Sans', sans-serif; 
-          background: #050811;
+          background: #021a16; /* Deep Emerald Background */
           color: #f8fafc;
           overflow-x: hidden;
           width: 100%;
@@ -29,10 +31,10 @@
         /* Premium Glassmorphism */
         .glass-card {
           background: var(--glass-bg);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border: 1px solid var(--glass-border);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 1px var(--glass-highlight);
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px var(--glass-highlight);
         }
 
         .glass-card-light {
@@ -44,9 +46,9 @@
         }
 
         .glass-modal {
-          background: rgba(5, 8, 17, 0.7);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
+          background: rgba(2, 26, 22, 0.8);
+          backdrop-filter: blur(32px);
+          -webkit-backdrop-filter: blur(32px);
         }
 
         /* Interactive Elements */
@@ -58,7 +60,7 @@
         }
         .glass-button:hover {
           background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.2);
+          border-color: var(--primary-green);
           transform: translateY(-2px);
         }
 
@@ -90,66 +92,86 @@
           opacity: 1;
         }
 
-        /* Depth Blobs */
+        /* Text Transition Animation */
+        .text-transition {
+          animation: text-reveal-slide 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+          background: linear-gradient(to right, #10b981, #34d399, #10b981);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: text-reveal-slide 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards, gradient-flow 3s linear infinite;
+        }
+
+        @keyframes text-reveal-slide {
+          0% { opacity: 0; transform: translateY(20px) skewY(2deg); filter: blur(10px); }
+          100% { opacity: 1; transform: translateY(0) skewY(0deg); filter: blur(0); }
+        }
+
+        @keyframes gradient-flow {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+
+        /* Depth Blobs - Updated to Greens */
         .blob {
           position: fixed;
           width: 600px;
           height: 600px;
           border-radius: 50%;
           z-index: -1;
-          filter: blur(100px);
-          opacity: 0.4;
+          filter: blur(120px);
+          opacity: 0.3;
           mix-blend-mode: screen;
         }
         .blob-1 {
-          background: radial-gradient(circle, #4f46e5 0%, transparent 70%);
+          background: radial-gradient(circle, #059669 0%, transparent 70%);
           top: -200px;
           left: -100px;
-          animation: orbit 25s infinite linear;
+          animation: orbit 30s infinite linear;
         }
         .blob-2 {
-          background: radial-gradient(circle, #10b981 0%, transparent 70%);
+          background: radial-gradient(circle, #34d399 0%, transparent 70%);
           bottom: -200px;
           right: -100px;
-          animation: orbit 30s infinite linear reverse;
+          animation: orbit 35s infinite linear reverse;
         }
         .blob-3 {
-          background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+          background: radial-gradient(circle, #10b981 0%, transparent 70%);
           top: 40%;
           left: 60%;
           width: 400px;
           height: 400px;
-          animation: drift 20s infinite alternate ease-in-out;
+          animation: drift 25s infinite alternate ease-in-out;
         }
 
         @keyframes orbit {
-          from { transform: rotate(0deg) translateX(100px) rotate(0deg); }
-          to { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+          from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+          to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
         }
         @keyframes drift {
           from { transform: translate(0, 0); }
-          to { transform: translate(-150px, 100px); }
+          to { transform: translate(-100px, 150px); }
         }
 
         /* Entry Animations */
         .reveal {
-          animation: reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @keyframes reveal {
-          from { opacity: 0; transform: translateY(20px) scale(0.98); }
+          from { opacity: 0; transform: translateY(30px) scale(0.96); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         /* Custom Input Styling */
         input, select, textarea {
-          background: rgba(255, 255, 255, 0.03) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-          transition: all 0.2s ease !important;
+          background: rgba(255, 255, 255, 0.02) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          color: #f1f5f9 !important;
         }
         input:focus, select:focus, textarea:focus {
-          background: rgba(255, 255, 255, 0.06) !important;
-          border-color: rgba(99, 102, 241, 0.5) !important;
-          box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(16, 185, 129, 0.5) !important;
+          box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1) !important;
         }
 
         @media print {
@@ -158,10 +180,10 @@
           body { background: white !important; color: black !important; }
         }
 
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); border: 2px solid transparent; background-clip: content-box; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.4); }
     </style>
     <script type="importmap">
 {

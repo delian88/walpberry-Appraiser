@@ -89,7 +89,7 @@ export const Dashboard: React.FC = () => {
     <div className="min-h-screen flex flex-col md:flex-row text-slate-200 overflow-x-hidden">
       {/* Share Toast */}
       {shareFeedback && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-600/40 animate-bounce">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-emerald-600/40 animate-bounce">
           Deep Link Copied to Clipboard
         </div>
       )}
@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between p-4 glass-card border-x-0 border-t-0 sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center font-black italic text-xl shadow-lg">W</div>
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex items-center justify-center font-black italic text-xl shadow-lg">W</div>
           <span className="font-black text-lg tracking-tight">Walpberry</span>
         </div>
         <button 
@@ -110,35 +110,13 @@ export const Dashboard: React.FC = () => {
         </button>
       </header>
 
-      {/* Mobile Navigation Drawer */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-30 glass-modal pt-20 px-4">
-          <nav className="space-y-4">
-            {menuItems.map(t => (
-              <button
-                key={t}
-                onClick={() => { setActiveTab(t); setIsMobileMenuOpen(false); }}
-                className={`w-full text-left px-6 py-5 rounded-2xl font-bold transition-all text-base flex items-center gap-4 ${activeTab === t ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg' : 'text-slate-400'}`}
-              >
-                <div className={`w-2.5 h-2.5 rounded-full ${activeTab === t ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]' : 'bg-slate-700'}`}></div>
-                {t === 'HR' ? 'HR Central' : t.charAt(0) + t.slice(1).toLowerCase() + ' Phase'}
-              </button>
-            ))}
-            <button onClick={logout} className="w-full flex items-center gap-4 text-red-400 font-bold text-base px-6 py-5 rounded-2xl bg-red-400/5 mt-8 border border-red-400/10">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
-              Sign Out
-            </button>
-          </nav>
-        </div>
-      )}
-
       {/* Sidebar (Desktop) */}
       <aside className="w-72 glass-card m-6 rounded-[2rem] hidden md:flex flex-col border-white/10 p-8 sticky top-6 h-[calc(100vh-3rem)]">
         <div className="flex items-center gap-4 mb-12">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl flex items-center justify-center font-black italic text-2xl shadow-lg shadow-indigo-500/20">W</div>
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl flex items-center justify-center font-black italic text-2xl shadow-lg shadow-emerald-500/20">W</div>
           <div>
             <span className="font-black text-xl tracking-tight block text-white">Walpberry</span>
-            <span className="text-[10px] uppercase tracking-[0.3em] text-indigo-400 font-bold">Appraiser</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-emerald-400 font-bold">Appraiser</span>
           </div>
         </div>
 
@@ -147,9 +125,9 @@ export const Dashboard: React.FC = () => {
             <button
               key={t}
               onClick={() => setActiveTab(t)}
-              className={`w-full text-left px-5 py-4 rounded-2xl font-bold transition-all text-sm flex items-center gap-4 ${activeTab === t ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg shadow-indigo-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+              className={`w-full text-left px-5 py-4 rounded-2xl font-bold transition-all text-sm flex items-center gap-4 ${activeTab === t ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeTab === t ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]' : 'bg-slate-700'}`}></div>
+              <div className={`w-2 h-2 rounded-full ${activeTab === t ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-700'}`}></div>
               {t === 'HR' ? 'HR Central' : t.charAt(0) + t.slice(1).toLowerCase() + ' Phase'}
             </button>
           ))}
@@ -159,7 +137,7 @@ export const Dashboard: React.FC = () => {
           <div className="bg-white/5 rounded-2xl p-5 mb-6 border border-white/5">
             <p className="text-[10px] uppercase font-black text-slate-500 mb-2 tracking-widest">Active Profile</p>
             <p className="font-bold text-sm text-slate-100 truncate">{currentUser.name}</p>
-            <p className="text-[10px] text-indigo-400/80 font-bold tracking-wider">{currentUser.role.replace('_', ' ')}</p>
+            <p className="text-[10px] text-emerald-400/80 font-bold tracking-wider">{currentUser.role.replace('_', ' ')}</p>
           </div>
           <button onClick={logout} className="w-full flex items-center gap-3 text-slate-500 hover:text-red-400 font-bold text-sm transition-all px-5 py-3 rounded-2xl hover:bg-red-400/10 group">
             <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
@@ -173,17 +151,17 @@ export const Dashboard: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 md:mb-12">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none uppercase">{activeTab === 'HR' ? 'HR Central' : activeTab}</h1>
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none uppercase text-transition">{activeTab === 'HR' ? 'HR Central' : activeTab}</h1>
               <p className="text-slate-400 mt-2 font-medium text-sm md:text-base">
                 {activeTab === 'HR' ? 'Complete organizational oversight and user management.' : 'Sequential performance approval workflow.'}
               </p>
             </div>
             <div className="flex w-full sm:w-auto gap-4">
               {activeTab === 'CONTRACT' && isEmployee && (
-                <button onClick={() => { setSelectedContract(undefined); setShowContractModal(true); }} className="flex-1 sm:flex-none bg-indigo-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Create Contract</button>
+                <button onClick={() => { setSelectedContract(undefined); setShowContractModal(true); }} className="flex-1 sm:flex-none bg-emerald-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Create Contract</button>
               )}
               {activeTab === 'MONTHLY' && isEmployee && (
-                <button onClick={() => handleOpenMonthly()} className="flex-1 sm:flex-none bg-slate-100 text-slate-900 px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-slate-100/10 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Log Progress</button>
+                <button onClick={() => handleOpenMonthly()} className="flex-1 sm:flex-none bg-white text-emerald-900 px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-white/10 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Log Progress</button>
               )}
               {activeTab === 'ANNUAL' && isEmployee && (
                 <button onClick={() => { setSelectedAppraisal(undefined); setShowAppraisalModal(true); }} className="flex-1 sm:flex-none bg-emerald-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container text-sm md:text-base">+ Start Appraisal</button>
@@ -217,7 +195,7 @@ export const Dashboard: React.FC = () => {
                         <tr key={c.id} className="group hover:bg-white/5 transition-all">
                           <td className="px-6 md:px-8 py-4 md:py-6">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-all">
+                              <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-500/20 group-hover:text-emerald-400 transition-all">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                               </div>
                               <div>
@@ -241,7 +219,7 @@ export const Dashboard: React.FC = () => {
                           <td className="px-6 md:px-8 py-4 md:py-6 text-center">
                             <span className={`inline-block px-3 md:px-4 py-1.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border ${
                               c.status === FormStatus.APPROVED 
-                                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
                                 : c.status === FormStatus.DRAFT 
                                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                                   : 'bg-white/5 text-slate-400 border-white/10'
@@ -251,11 +229,11 @@ export const Dashboard: React.FC = () => {
                           </td>
                           <td className="px-6 md:px-8 py-4 md:py-6 text-right">
                             <div className="flex justify-end gap-2 md:gap-3">
-                              <button onClick={() => handleShare('CONTRACT', c.id)} className="bg-white/5 text-indigo-400 p-2 rounded-xl hover:bg-indigo-500/20 transition-all border border-indigo-500/10 shadow-lg shadow-indigo-500/5">
+                              <button onClick={() => handleShare('CONTRACT', c.id)} className="bg-white/5 text-emerald-400 p-2 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/10 shadow-lg shadow-emerald-500/5">
                                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                               </button>
                               {isPM && c.status === FormStatus.SUBMITTED && (
-                                <button onClick={() => handleApproveContract(c)} className="bg-indigo-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg">Approve</button>
+                                <button onClick={() => handleApproveContract(c)} className="bg-emerald-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-lg">Approve</button>
                               )}
                               <button onClick={() => { setSelectedContract(c); setShowContractModal(true); }} className="bg-white/5 text-slate-400 p-2 rounded-xl hover:bg-white/10 hover:text-white transition-all border border-white/5">
                                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -274,9 +252,9 @@ export const Dashboard: React.FC = () => {
               <>
                 {userMonthly.length === 0 && <div className="text-center py-24 md:py-32 glass-card rounded-3xl md:rounded-[2.5rem] border-dashed border-white/10 text-slate-500 font-bold uppercase tracking-widest text-xs">No progress logs found.</div>}
                 {userMonthly.map(m => (
-                  <div key={m.id} className="glass-card p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:border-indigo-500/30 transition-all hover:-translate-y-1 shimmer-container">
+                  <div key={m.id} className="glass-card p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:border-emerald-500/30 transition-all hover:-translate-y-1 shimmer-container">
                     <div className="flex items-center gap-5 md:gap-8">
-                       <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-indigo-400 flex-shrink-0">
+                       <div className="w-12 h-12 md:w-16 md:h-16 bg-emerald-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-emerald-400 flex-shrink-0">
                           <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                        </div>
                        <div className="min-w-0">
@@ -286,12 +264,12 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between md:justify-end gap-3 md:gap-6 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => handleShare('MONTHLY', m.id)} className="bg-white/5 text-indigo-400 p-3 rounded-xl hover:bg-indigo-500/20 transition-all border border-indigo-500/10">
+                        <button onClick={() => handleShare('MONTHLY', m.id)} className="bg-white/5 text-emerald-400 p-3 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/10">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                         </button>
-                        <span className={`px-4 py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest border ${m.status === FormStatus.SUBMITTED ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-white/5 text-slate-500 border-white/10'}`}>{m.status}</span>
+                        <span className={`px-4 py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest border ${m.status === FormStatus.SUBMITTED ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/5 text-slate-500 border-white/10'}`}>{m.status}</span>
                       </div>
-                      <button onClick={() => handleOpenMonthly(m)} className="bg-white text-slate-900 px-5 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:bg-slate-200 transition-all">Inspect</button>
+                      <button onClick={() => handleOpenMonthly(m)} className="bg-white text-emerald-900 px-5 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-bold hover:bg-slate-200 transition-all">Inspect</button>
                     </div>
                   </div>
                 ))}

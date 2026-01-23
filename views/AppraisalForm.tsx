@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { AnnualAppraisal, FormStatus, AppraisalKRA, UserRole } from '../types';
@@ -7,7 +6,6 @@ import { getRating } from '../constants';
 export const AppraisalForm: React.FC<{ onClose: () => void, initialData?: AnnualAppraisal }> = ({ onClose, initialData }) => {
   const { currentUser, contracts, upsertAppraisal } = useAppContext();
   
-  // Fixed: Specifically find the single Active & Approved contract
   const activeContract = useMemo(() => 
     contracts.find(c => c.employeeId === currentUser?.id && c.isActive && c.status === FormStatus.APPROVED), 
     [contracts, currentUser]
@@ -24,7 +22,7 @@ export const AppraisalForm: React.FC<{ onClose: () => void, initialData?: Annual
     setKraScoring(kraScoring.map(k => {
       if (k.id === id) {
         const rawScore = k.target > 0 ? (val / k.target) * 100 : 0;
-        const weightedRawScore = (val / k.target) * k.weight;
+        const weightedRawScore = k.target > 0 ? (val / k.target) * k.weight : 0;
         return { ...k, achievement: val, rawScore, weightedRawScore };
       }
       return k;
@@ -71,7 +69,7 @@ export const AppraisalForm: React.FC<{ onClose: () => void, initialData?: Annual
 
   return (
     <div className="fixed inset-0 z-50 glass-modal flex items-center justify-center p-4">
-      <div className="bg-slate-900/95 border border-white/10 rounded-[2.5rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden reveal">
         <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
           <div>
             <h2 className="text-2xl font-black text-white uppercase tracking-tight">Annual Appraisal</h2>
@@ -90,13 +88,19 @@ export const AppraisalForm: React.FC<{ onClose: () => void, initialData?: Annual
 
         <div className="flex-1 overflow-y-auto p-10 space-y-12">
           <section className="bg-white/5 p-8 rounded-[2rem] border border-white/5 flex flex-wrap gap-12">
-             <div><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Employee</p><p className="font-bold text-slate-100">{currentUser?.name}</p></div>
+             <div className="flex items-center gap-3">
+               <span className="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-xs font-black">SECTION 1</span>
+               <div><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Employee Identity</p><p className="font-bold text-slate-100">{currentUser?.name}</p></div>
+             </div>
              <div><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">IPPIS</p><p className="font-bold text-slate-100">{currentUser?.ippisNumber}</p></div>
              <div><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Active Cycle</p><p className="font-bold text-indigo-400">{activeContract?.periodFrom} — {activeContract?.periodTo}</p></div>
           </section>
 
           <section className="space-y-6">
-            <h3 className="font-black text-slate-500 uppercase text-[10px] tracking-[0.3em]">KPI Performance Matrix</h3>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-xs font-black">SECTION 2</span>
+              <h3 className="font-black text-slate-500 uppercase text-[10px] tracking-[0.3em]">KPI Performance Matrix</h3>
+            </div>
             <div className="overflow-x-auto border border-white/10 rounded-[2rem] bg-white/5 shadow-2xl shadow-emerald-500/5">
               <table className="w-full text-left text-xs">
                 <thead className="bg-white/5">
@@ -139,11 +143,17 @@ export const AppraisalForm: React.FC<{ onClose: () => void, initialData?: Annual
 
           <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
              <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Employee Narrative</label>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-xs font-black">SECTION 3</span>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Employee Narrative</label>
+                </div>
                 <textarea value={employeeComments} onChange={e => setEmployeeComments(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-[2rem] p-6 h-40 focus:ring-2 focus:ring-emerald-500 outline-none text-slate-300 text-sm" placeholder="Provide your perspective on the year..." />
              </div>
              <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Management Review</label>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-xs font-black">SECTION 4</span>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Management Review</label>
+                </div>
                 <textarea value={pmComments} onChange={e => setPmComments(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-[2rem] p-6 h-40 focus:ring-2 focus:ring-emerald-500 outline-none text-slate-300 text-sm" placeholder="Supervisory feedback..." disabled={!isPM && !isCTO} />
              </div>
           </section>
@@ -151,11 +161,10 @@ export const AppraisalForm: React.FC<{ onClose: () => void, initialData?: Annual
 
         <div className="p-10 bg-white/5 border-t border-white/5 flex justify-end gap-4">
           <button onClick={() => handleAction(FormStatus.DRAFT)} className="px-10 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.2em]">Save as Draft</button>
-          
           {isCTO ? (
-            <button onClick={() => handleAction(FormStatus.CERTIFIED)} className="px-12 py-4 bg-amber-600 text-white font-black rounded-2xl hover:bg-amber-500 shadow-2xl shadow-amber-600/20 transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container">Final Certify & Lock</button>
+            <button onClick={() => handleAction(FormStatus.CERTIFIED)} className="px-12 py-4 bg-amber-600 text-white font-black rounded-2xl hover:bg-amber-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container">Final Certify & Lock</button>
           ) : (
-            <button onClick={() => handleAction(FormStatus.SUBMITTED)} className="px-12 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 shadow-2xl shadow-emerald-600/20 transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container">Submit for Approval</button>
+            <button onClick={() => handleAction(FormStatus.SUBMITTED)} className="px-12 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container">Submit for Approval</button>
           )}
         </div>
       </div>
