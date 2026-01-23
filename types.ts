@@ -58,6 +58,8 @@ export interface MonthlyTask {
   id: string;
   description: string;
   expectation: string;
+  weight: number;
+  unitOfMeasure: string;
   startDate: string;
   dueDate: string;
   status: 'Completed' | 'In Progress' | 'Delayed';
