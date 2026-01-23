@@ -1,0 +1,5 @@
+{
+  "name": "Walpberry Appraiser System",
+  "description": "A multi-level performance appraisal & approval system with role-based access control, sequential approval workflows, and locked certificate generation.",
+  "requestFramePermissions": []
+}
