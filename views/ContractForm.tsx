@@ -1,132 +1,341 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { PerformanceContract, FormStatus, KRAEntry } from '../types';
+import { PerformanceContract, FormStatus, KRAEntry, UserRole } from '../types';
 
 export const ContractForm: React.FC<{ onClose: () => void, initialData?: PerformanceContract }> = ({ onClose, initialData }) => {
   const { currentUser, upsertContract } = useAppContext();
-  const [periodFrom, setPeriodFrom] = useState(initialData?.periodFrom || '');
-  const [periodTo, setPeriodTo] = useState(initialData?.periodTo || '');
-  const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
-  const [kraEntries, setKraEntries] = useState<KRAEntry[]>(initialData?.kraEntries || []);
+
+  // Initialization logic
+  const [contract, setContract] = useState<Partial<PerformanceContract>>(initialData || {
+    id: Math.random().toString(36).substr(2, 9),
+    employeeId: currentUser?.id || '',
+    periodFrom: '',
+    periodTo: '',
+    employeeFirstName: currentUser?.firstName || '',
+    employeeSurname: currentUser?.surname || '',
+    employeeOtherNames: currentUser?.otherNames || '',
+    employeeIppis: currentUser?.ippisNumber || '',
+    employeeEmail: currentUser?.email || '',
+    employeePhone: currentUser?.phone || '',
+    employeeDesignation: currentUser?.designation || '',
+    employeeDepartment: currentUser?.department || '',
+    supervisorFirstName: 'John',
+    supervisorSurname: 'Adewale',
+    supervisorIppis: 'IP-2001',
+    supervisorEmail: 'john.adewale@walpberry.com',
+    supervisorDesignation: 'Senior Project Manager',
+    supervisorDepartment: 'Engineering',
+    officerFirstName: 'Victor',
+    officerSurname: 'Idowu',
+    officerIppis: 'IP-1001',
+    officerDesignation: 'Chief Technology Officer',
+    kraEntries: [],
+    employeeSigned: false,
+    supervisorSigned: false,
+    officerSigned: false,
+    status: FormStatus.DRAFT,
+    isActive: true,
+  });
+
+  const isEmployee = currentUser?.role === UserRole.EMPLOYEE;
+  const isPM = currentUser?.role === UserRole.PM;
+  const isCTO = currentUser?.role === UserRole.CTO;
+  
+  const isDraft = contract.status === FormStatus.DRAFT;
+  const isSubmitted = contract.status === FormStatus.SUBMITTED;
+  const isApproved = contract.status === FormStatus.APPROVED;
+
+  const canEditMain = isEmployee && isDraft;
+
+  const totalWeight = useMemo(() => 
+    (contract.kraEntries || []).reduce((sum, k) => sum + (Number(k.weight) || 0), 0),
+    [contract.kraEntries]
+  );
 
   const addKra = () => {
-    setKraEntries([...kraEntries, { 
-      id: Math.random().toString(36).substr(2, 9), 
-      area: '', objectives: '', weight: 0, kpis: '', target: 0, unit: 'Percentage' 
-    }]);
+    if (!canEditMain) return;
+    const newKra: KRAEntry = {
+      id: Math.random().toString(36).substr(2, 9),
+      area: '',
+      objectives: '',
+      weight: 0,
+      kpis: '',
+      target: 0,
+      unit: 'Percentage'
+    };
+    setContract(prev => ({ ...prev, kraEntries: [...(prev.kraEntries || []), newKra] }));
   };
 
   const updateKra = (id: string, field: keyof KRAEntry, value: any) => {
-    setKraEntries(kraEntries.map(k => k.id === id ? { ...k, [field]: value } : k));
+    if (!canEditMain) return;
+    setContract(prev => ({
+      ...prev,
+      kraEntries: (prev.kraEntries || []).map(k => k.id === id ? { ...k, [field]: value } : k)
+    }));
   };
 
-  const handleSubmit = (status: FormStatus) => {
-    const contract: PerformanceContract = {
-      id: initialData?.id || Math.random().toString(36).substr(2, 9),
-      employeeId: currentUser?.id || '',
-      periodFrom,
-      periodTo,
-      kraEntries,
-      status,
-      isActive,
+  const handleSubmit = (nextStatus: FormStatus) => {
+    if (nextStatus === FormStatus.SUBMITTED && totalWeight !== 100) {
+      alert(`Total weight must be 100%. Current total: ${totalWeight}%`);
+      return;
+    }
+
+    const payload: PerformanceContract = {
+      ...contract as PerformanceContract,
+      status: nextStatus,
       updatedAt: Date.now(),
+      employeeSignedDate: contract.employeeSigned && !contract.employeeSignedDate ? Date.now() : contract.employeeSignedDate,
+      supervisorSignedDate: contract.supervisorSigned && !contract.supervisorSignedDate ? Date.now() : contract.supervisorSignedDate,
+      officerSignedDate: contract.officerSigned && !contract.officerSignedDate ? Date.now() : contract.officerSignedDate,
     };
-    upsertContract(contract);
+    upsertContract(payload);
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 glass-modal flex items-center justify-center p-2 md:p-4">
-      <div className="bg-slate-900/90 border border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] w-[96vw] md:w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
-        <div className="p-5 md:p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
+      <div className="bg-slate-900 border border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] w-[96vw] md:w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden">
+        
+        {/* Header */}
+        <div className="p-6 md:p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
           <div>
-            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Performance Contract</h2>
-            <p className="text-[8px] md:text-[10px] text-indigo-400 uppercase tracking-[0.4em] font-black mt-1">Agreement Phase</p>
+            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Performance Contract Form</h2>
+            <p className="text-[9px] text-indigo-400 uppercase tracking-[0.3em] font-black mt-1">Lifecycle: {contract.status}</p>
           </div>
-          <button onClick={onClose} className="hover:bg-white/10 p-2 md:p-3 rounded-xl md:rounded-2xl transition-all border border-white/5">
-            <svg className="w-5 h-5 md:w-6 md:h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button onClick={onClose} className="hover:bg-white/10 p-2 md:p-3 rounded-xl transition-all border border-white/5">
+            <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 md:p-10 space-y-8 md:space-y-10">
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
-            <div className="space-y-4 md:space-y-6">
-              <h3 className="font-black text-slate-500 uppercase text-[9px] md:text-[10px] tracking-[0.3em]">Contract Period & Status</h3>
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div>
-                  <label className="block text-[9px] font-black text-slate-500 uppercase mb-1 md:mb-2">From</label>
-                  <input type="date" value={periodFrom} onChange={e => setPeriodFrom(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg md:rounded-xl p-2.5 md:p-3 text-xs md:text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-500 uppercase mb-1 md:mb-2">To</label>
-                  <input type="date" value={periodTo} onChange={e => setPeriodTo(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg md:rounded-xl p-2.5 md:p-3 text-xs md:text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12">
+          
+          {/* SECTION A: APPRAISAL / CONTRACT PERIOD */}
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">A</span>
+              Appraisal / Contract Period
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Start Date</label>
+                <input 
+                  type="date" 
+                  value={contract.periodFrom} 
+                  onChange={e => setContract({...contract, periodFrom: e.target.value})}
+                  disabled={!canEditMain}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                />
               </div>
-              <div className="flex items-center justify-between p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
-                <div className="pr-4">
-                    <p className="text-[11px] md:text-xs font-bold text-white uppercase tracking-wider">Active Status</p>
-                    <p className="text-[8px] md:text-[10px] text-slate-500 leading-tight">Enable as primary tracking contract.</p>
-                </div>
-                <button 
-                  onClick={() => setIsActive(!isActive)}
-                  className={`w-10 md:w-12 h-5 md:h-6 rounded-full transition-all relative flex-shrink-0 ${isActive ? 'bg-emerald-500' : 'bg-slate-700'}`}
-                >
-                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isActive ? 'left-5.5 md:left-7' : 'left-0.5 md:left-1'}`} />
-                </button>
-              </div>
-            </div>
-            <div className="space-y-4 md:space-y-6">
-              <h3 className="font-black text-slate-500 uppercase text-[9px] md:text-[10px] tracking-[0.3em]">Employee Snapshot</h3>
-              <div className="bg-white/5 p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 md:gap-4">
-                <p className="text-xs md:text-sm text-slate-300 font-medium truncate"><span className="text-slate-500 font-bold uppercase text-[9px] mr-2 tracking-widest">Name:</span> {currentUser?.name}</p>
-                <p className="text-xs md:text-sm text-slate-300 font-medium"><span className="text-slate-500 font-bold uppercase text-[9px] mr-2 tracking-widest">IPPIS:</span> {currentUser?.ippisNumber}</p>
-                <p className="text-xs md:text-sm text-slate-300 font-medium truncate"><span className="text-slate-500 font-bold uppercase text-[9px] mr-2 tracking-widest">Dept:</span> {currentUser?.department}</p>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">End Date</label>
+                <input 
+                  type="date" 
+                  value={contract.periodTo} 
+                  onChange={e => setContract({...contract, periodTo: e.target.value})}
+                  disabled={!canEditMain}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                />
               </div>
             </div>
           </section>
 
-          <section className="space-y-4 md:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h3 className="font-black text-slate-500 uppercase text-[9px] md:text-[10px] tracking-[0.3em]">Key Result Areas (KRAs)</h3>
-              <button onClick={addKra} className="w-full sm:w-auto text-indigo-400 font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/10 hover:bg-white/10 transition-all">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                Add Row
-              </button>
+          {/* SECTION B: EMPLOYEE IDENTIFICATION */}
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">B</span>
+              Employee Identification
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white">{contract.employeeSurname}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white">{contract.employeeFirstName}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Other Names</label><p className="font-bold text-white">{contract.employeeOtherNames || 'N/A'}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.employeeIppis}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white">{contract.employeeDesignation}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label><p className="font-bold text-white">{contract.employeeDepartment}</p></div>
             </div>
-            <div className="overflow-x-auto border border-white/10 rounded-2xl md:rounded-[2rem] bg-white/5">
-              <table className="w-full text-left text-[11px] md:text-xs min-w-[800px]">
+          </section>
+
+          {/* SECTION C & D: SUPERVISOR & OFFICER */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="space-y-6">
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">C</span>
+                Supervisor Details
+              </h3>
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
+                <p className="text-sm font-bold text-slate-100">{contract.supervisorFirstName} {contract.supervisorSurname}</p>
+                <p className="text-xs text-slate-400">{contract.supervisorDesignation} • {contract.supervisorDepartment}</p>
+                <p className="text-[10px] text-slate-500">ID: {contract.supervisorIppis}</p>
+              </div>
+            </section>
+            <section className="space-y-6">
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">D</span>
+                Counter-Signing Officer
+              </h3>
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
+                <p className="text-sm font-bold text-slate-100">{contract.officerFirstName} {contract.officerSurname}</p>
+                <p className="text-xs text-slate-400">{contract.officerDesignation}</p>
+                <p className="text-[10px] text-slate-500">ID: {contract.officerIppis}</p>
+              </div>
+            </section>
+          </div>
+
+          {/* SECTION E: KEY RESULT AREAS (KRAs) & OBJECTIVES */}
+          <section className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">E</span>
+                KRAs & Objectives
+              </h3>
+              {canEditMain && (
+                <button onClick={addKra} className="bg-indigo-600/20 text-indigo-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 hover:bg-indigo-600/30 transition-all">+ Add Row</button>
+              )}
+            </div>
+            
+            <div className="overflow-x-auto border border-white/10 rounded-3xl bg-white/5">
+              <table className="w-full text-left text-xs min-w-[1000px]">
                 <thead className="bg-white/5">
                   <tr>
-                    <th className="px-5 md:px-6 py-3 md:py-4 font-black text-slate-500 uppercase tracking-widest">Area</th>
-                    <th className="px-5 md:px-6 py-3 md:py-4 font-black text-slate-500 uppercase tracking-widest">Objectives</th>
-                    <th className="px-5 md:px-6 py-3 md:py-4 font-black text-slate-500 uppercase tracking-widest w-24">Wt %</th>
-                    <th className="px-5 md:px-6 py-3 md:py-4 font-black text-slate-500 uppercase tracking-widest">KPIs</th>
-                    <th className="px-5 md:px-6 py-3 md:py-4 font-black text-slate-500 uppercase tracking-widest w-24">Target</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest w-12 text-center">S/N</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest w-48">KRA</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest">Objectives</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest w-24 text-center">Weight%</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest">KPIs</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest w-24 text-center">Target</th>
+                    <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest w-36">Unit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {kraEntries.length === 0 && (
-                    <tr><td colSpan={5} className="p-10 md:p-12 text-center text-slate-600 italic font-medium">No objectives defined yet.</td></tr>
-                  )}
-                  {kraEntries.map(k => (
+                  {(contract.kraEntries || []).map((k, idx) => (
                     <tr key={k.id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-2"><input value={k.area} onChange={e => updateKra(k.id, 'area', e.target.value)} className="w-full bg-transparent border-none p-2.5 md:p-3 text-slate-200 focus:ring-0" placeholder="Area..." /></td>
-                      <td className="p-2"><textarea value={k.objectives} onChange={e => updateKra(k.id, 'objectives', e.target.value)} className="w-full bg-transparent border-none p-2.5 md:p-3 text-slate-200 focus:ring-0 resize-none" rows={2} placeholder="Description..." /></td>
-                      <td className="p-2"><input type="number" value={k.weight} onChange={e => updateKra(k.id, 'weight', Number(e.target.value))} className="w-full bg-transparent border-none p-2.5 md:p-3 text-slate-200 font-bold focus:ring-0 text-center" /></td>
-                      <td className="p-2"><textarea value={k.kpis} onChange={e => updateKra(k.id, 'kpis', e.target.value)} className="w-full bg-transparent border-none p-2.5 md:p-3 text-slate-200 focus:ring-0 resize-none" rows={2} placeholder="KPIs..." /></td>
-                      <td className="p-2"><input type="number" value={k.target} onChange={e => updateKra(k.id, 'target', Number(e.target.value))} className="w-full bg-transparent border-none p-2.5 md:p-3 text-slate-200 font-bold focus:ring-0 text-center" /></td>
+                      <td className="px-5 py-4 text-center text-slate-500 font-black">{idx + 1}</td>
+                      <td className="p-2"><input value={k.area} onChange={e => updateKra(k.id, 'area', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-3 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded-lg outline-none" /></td>
+                      <td className="p-2"><textarea value={k.objectives} onChange={e => updateKra(k.id, 'objectives', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-3 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded-lg outline-none resize-none h-20" /></td>
+                      <td className="p-2"><input type="number" value={k.weight} onChange={e => updateKra(k.id, 'weight', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-3 text-center font-black text-white focus:ring-1 focus:ring-indigo-500 rounded-lg outline-none" /></td>
+                      <td className="p-2"><textarea value={k.kpis} onChange={e => updateKra(k.id, 'kpis', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-3 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded-lg outline-none resize-none h-20" /></td>
+                      <td className="p-2"><input type="number" value={k.target} onChange={e => updateKra(k.id, 'target', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-3 text-center font-black text-white focus:ring-1 focus:ring-indigo-500 rounded-lg outline-none" /></td>
+                      <td className="p-2">
+                        <select value={k.unit} onChange={e => updateKra(k.id, 'unit', e.target.value)} disabled={!canEditMain} className="w-full bg-slate-900/50 p-3 text-slate-300 focus:ring-1 focus:ring-indigo-500 rounded-lg outline-none border-none">
+                          <option>Percentage</option>
+                          <option>Quantity</option>
+                          <option>Rating</option>
+                          <option>Time-based</option>
+                        </select>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="bg-white/5">
+                    <td colSpan={3} className="px-5 py-4 text-right font-black text-slate-500 uppercase">Total Weight Sum:</td>
+                    <td className={`px-5 py-4 text-center font-black text-lg ${totalWeight === 100 ? 'text-emerald-400' : 'text-red-400'}`}>{totalWeight}%</td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </section>
+
+          {/* SECTION F: EMPLOYEE DECLARATION */}
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">F</span>
+              Employee Declaration
+            </h3>
+            <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-6">
+              <div className="flex items-start gap-4">
+                <input 
+                  type="checkbox" 
+                  checked={contract.employeeSigned} 
+                  onChange={e => setContract({...contract, employeeSigned: e.target.checked})}
+                  disabled={!isEmployee || !isDraft}
+                  className="w-6 h-6 rounded-lg mt-1 bg-slate-900 border-white/10 text-indigo-600"
+                />
+                <p className="text-sm text-slate-400 leading-relaxed italic">
+                  I, <span className="text-white font-bold">{contract.employeeFirstName} {contract.employeeSurname}</span>, hereby declare that I have discussed and agreed on the performance objectives and targets defined in this contract for the appraisal period.
+                </p>
+              </div>
+              {contract.employeeSignedDate && (
+                <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-widest">Signed on: {new Date(contract.employeeSignedDate).toLocaleDateString()}</p>
+              )}
+            </div>
+          </section>
+
+          {/* SECTION G: SUPERVISOR DECLARATION */}
+          {(isPM || isSubmitted || isApproved) && (
+            <section className="space-y-6">
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">G</span>
+                Supervisor Declaration
+              </h3>
+              <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-6">
+                <div className="flex items-start gap-4">
+                  <input 
+                    type="checkbox" 
+                    checked={contract.supervisorSigned} 
+                    onChange={e => setContract({...contract, supervisorSigned: e.target.checked})}
+                    disabled={!isPM || !isSubmitted}
+                    className="w-6 h-6 rounded-lg mt-1 bg-slate-900 border-white/10 text-indigo-600"
+                  />
+                  <p className="text-sm text-slate-400 leading-relaxed italic">
+                    I, <span className="text-white font-bold">{contract.supervisorFirstName} {contract.supervisorSurname}</span>, confirm that the objectives and targets set in this contract have been reviewed and aligned with organizational goals.
+                  </p>
+                </div>
+                {contract.supervisorSignedDate && (
+                  <p className="text-[10px] text-emerald-400 uppercase font-bold tracking-widest">Validated on: {new Date(contract.supervisorSignedDate).toLocaleDateString()}</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* SECTION H: COUNTER-SIGNING OFFICER DECLARATION */}
+          {(isCTO || isApproved) && (
+            <section className="space-y-6">
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">H</span>
+                Counter-Signing Officer Declaration
+              </h3>
+              <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-6">
+                <div className="flex items-start gap-4">
+                  <input 
+                    type="checkbox" 
+                    checked={contract.officerSigned} 
+                    onChange={e => setContract({...contract, officerSigned: e.target.checked})}
+                    disabled={!isCTO || !isSubmitted}
+                    className="w-6 h-6 rounded-lg mt-1 bg-slate-900 border-white/10 text-indigo-600"
+                  />
+                  <p className="text-sm text-slate-400 leading-relaxed italic">
+                    Final confirmation provided for organizational record and compliance.
+                  </p>
+                </div>
+                {contract.officerSignedDate && (
+                  <p className="text-[10px] text-amber-400 uppercase font-bold tracking-widest">Certified on: {new Date(contract.officerSignedDate).toLocaleDateString()}</p>
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
-        <div className="p-5 md:p-10 bg-white/5 border-t border-white/5 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
-          <button onClick={() => handleSubmit(FormStatus.DRAFT)} className="w-full sm:w-auto px-8 py-3.5 md:px-10 md:py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-xl md:rounded-2xl hover:bg-white/10 transition-all text-[9px] md:text-[10px] uppercase tracking-[0.2em]">Draft</button>
-          <button onClick={() => handleSubmit(FormStatus.SUBMITTED)} className="w-full sm:w-auto px-8 py-3.5 md:px-10 md:py-4 bg-indigo-600 text-white font-black rounded-xl md:rounded-2xl hover:bg-indigo-500 shadow-2xl transition-all text-[9px] md:text-[10px] uppercase tracking-[0.2em] shimmer-container">Confirm</button>
+        {/* Footer Actions */}
+        <div className="p-6 md:p-10 bg-white/5 border-t border-white/5 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
+          {isEmployee && isDraft && (
+            <>
+              <button onClick={() => handleSubmit(FormStatus.DRAFT)} className="px-10 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.2em]">Save as Draft</button>
+              <button onClick={() => handleSubmit(FormStatus.SUBMITTED)} className="px-12 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container">Agree & Submit</button>
+            </>
+          )}
+          {isPM && isSubmitted && (
+             <button onClick={() => handleSubmit(FormStatus.SUBMITTED)} className="px-12 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.2em]">Save Supervisor Review</button>
+          )}
+          {isCTO && isSubmitted && (
+            <button onClick={() => handleSubmit(FormStatus.APPROVED)} className="px-12 py-4 bg-amber-600 text-white font-black rounded-2xl hover:bg-amber-500 shadow-2xl transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container">Final Approval & Lock</button>
+          )}
+          {!isDraft && (isEmployee || (isPM && !isSubmitted) || (isCTO && isApproved)) && (
+            <button onClick={onClose} className="px-10 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.2em]">Exit View</button>
+          )}
         </div>
       </div>
     </div>

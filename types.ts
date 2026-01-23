@@ -40,15 +40,48 @@ export interface KRAEntry {
   weight: number;
   kpis: string;
   target: number;
-  unit: 'Percentage' | 'Number' | 'Rating';
+  unit: 'Percentage' | 'Quantity' | 'Rating' | 'Time-based';
 }
 
 export interface PerformanceContract {
   id: string;
   employeeId: string;
+  // Section A
   periodFrom: string;
   periodTo: string;
+  // Section B (Captured from User but stored for history)
+  employeeFirstName: string;
+  employeeSurname: string;
+  employeeOtherNames?: string;
+  employeeIppis: string;
+  employeeEmail: string;
+  employeePhone: string;
+  employeeDesignation: string;
+  employeeDepartment: string;
+  // Section C
+  supervisorFirstName: string;
+  supervisorSurname: string;
+  supervisorOtherNames?: string;
+  supervisorIppis: string;
+  supervisorEmail: string;
+  supervisorDesignation: string;
+  supervisorDepartment: string;
+  // Section D
+  officerFirstName: string;
+  officerSurname: string;
+  officerOtherNames?: string;
+  officerIppis: string;
+  officerDesignation: string;
+  // Section E
   kraEntries: KRAEntry[];
+  // Declarations
+  employeeSigned: boolean;
+  employeeSignedDate?: number;
+  supervisorSigned: boolean;
+  supervisorSignedDate?: number;
+  officerSigned: boolean;
+  officerSignedDate?: number;
+  
   status: AppraisalStatus;
   isActive: boolean;
   updatedAt: number;
