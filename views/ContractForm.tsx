@@ -122,20 +122,22 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                 <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Start Date</label>
                 <input 
                   type="date" 
-                  value={contract.periodFrom} 
+                  value={contract.periodFrom || ''} 
                   onChange={e => setContract({...contract, periodFrom: e.target.value})}
+                  onFocus={(e) => (e.target as any).showPicker?.()}
                   disabled={!canEditMain}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className={`w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 ${canEditMain ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">End Date</label>
                 <input 
                   type="date" 
-                  value={contract.periodTo} 
+                  value={contract.periodTo || ''} 
                   onChange={e => setContract({...contract, periodTo: e.target.value})}
+                  onFocus={(e) => (e.target as any).showPicker?.()}
                   disabled={!canEditMain}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className={`w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 ${canEditMain ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                 />
               </div>
             </div>

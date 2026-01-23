@@ -73,6 +73,16 @@
           100% { transform: translate(100px, 100px); }
         }
 
+        /* Date Picker Visibility Fix */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
         @media print {
           .no-print { display: none !important; }
           .print-only { display: block !important; }
