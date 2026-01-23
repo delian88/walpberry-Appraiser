@@ -10,12 +10,24 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
   const supervisors = useMemo(() => users.filter(u => u.role === UserRole.PM || u.role === UserRole.CTO), [users]);
   const ctos = useMemo(() => users.filter(u => u.role === UserRole.CTO), [users]);
 
-  // Initial competencies
+  // Expanded initial competencies
   const defaultCompetencies: CompetencyEntry[] = [
-    { id: 'c1', name: 'Leadership Skills', description: 'Ability to guide, inspire and direct team members towards goals.', score: 0 },
-    { id: 'c2', name: 'Communication', description: 'Effectiveness in verbal and written information exchange.', score: 0 },
-    { id: 'c3', name: 'Professionalism', description: 'Adherence to corporate ethics, punctuality and conduct.', score: 0 },
-    { id: 'c4', name: 'Technical Proficiency', description: 'Depth of knowledge and skill in assigned technical domain.', score: 0 }
+    { id: 'c1', category: 'Generic', name: 'Leadership Skills', description: 'Ability to guide, inspire and direct team members towards goals.', score: 0 },
+    { id: 'c2', category: 'Generic', name: 'Communication', description: 'Effectiveness in verbal and written information exchange.', score: 0 },
+    { id: 'c3', category: 'Generic', name: 'Professionalism', description: 'Adherence to corporate ethics, punctuality and conduct.', score: 0 },
+    { id: 'c4', category: 'Generic', name: 'Technical Proficiency', description: 'Depth of knowledge and skill in assigned technical domain.', score: 0 },
+    
+    { id: 'f1', category: 'Functional', name: 'Strategic Thinking', description: 'Formulating long-term objectives and aligning resources to achieve them.', score: 0 },
+    { id: 'f2', category: 'Functional', name: 'Drive for Result', description: 'Persistent focus on high-quality output and meeting milestones.', score: 0 },
+    { id: 'f3', category: 'Functional', name: 'Transparency and Accountability', description: 'Taking responsibility for actions and being open about processes.', score: 0 },
+    
+    { id: 'e1', category: 'Ethics', name: 'Integrity', description: 'Consistency in actions, values, methods, and principles.', score: 0 },
+    { id: 'e2', category: 'Ethics', name: 'Citizen Focus', description: 'Prioritizing the needs and service of the public/users.', score: 0 },
+    { id: 'e3', category: 'Ethics', name: 'Courage', description: 'Standing by principles despite pressure or difficulty.', score: 0 },
+    
+    { id: 'o1', category: 'Operations', name: 'Punctuality/Attendance', description: 'Consistent and timely presence at the workplace.', score: 0 },
+    { id: 'o2', category: 'Operations', name: 'Work Turn Around Time', description: 'Efficiency in completing tasks within expected timeframes.', score: 0 },
+    { id: 'o3', category: 'Operations', name: 'Innovation on the Job', description: 'Applying creative solutions to improve workplace efficiency.', score: 0 }
   ];
 
   // Initialization logic
@@ -62,7 +74,6 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
       if (supId) {
         handleSupervisorChange(supId);
       }
-      // Auto-assign first CTO as counter-signing officer
       if (ctos.length > 0) {
         handleOfficerChange(ctos[0].id);
       }
@@ -110,6 +121,34 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
     [contract.kraEntries]
   );
 
+  const updateKra = (id: string, field: keyof KRAEntry, value: any) => {
+    if (!canEditMain) return;
+    setContract(prev => ({
+      ...prev,
+      // Fixed: Casting to avoid unknown error
+      kraEntries: (prev.kraEntries as KRAEntry[] || []).map(k => k.id === id ? { ...k, [field]: value } : k)
+    }));
+  };
+
+  const updateCriteria = (id: string, key: keyof CriteriaValues, value: string) => {
+    if (!canEditMain) return;
+    setContract(prev => ({
+      ...prev,
+      // Fixed: Casting to avoid unknown error
+      kraEntries: (prev.kraEntries as KRAEntry[] || []).map(k => 
+        k.id === id ? { ...k, criteria: { ...k.criteria, [key]: value } } : k
+      )
+    }));
+  };
+
+  const updateCompetency = (id: string, score: number) => {
+    if (!canEditMain) return;
+    setContract(prev => ({
+      ...prev,
+      competencyEntries: prev.competencyEntries.map(c => c.id === id ? { ...c, score } : c)
+    }));
+  };
+
   const addKra = () => {
     if (!canEditMain) return;
     const newKra: KRAEntry = {
@@ -124,74 +163,38 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
       unit: 'Percentage',
       criteria: { o: '', e: '', vg: '', g: '', f: '', p: '' }
     };
-    setContract(prev => ({ ...prev, kraEntries: [...(prev.kraEntries || []), newKra] }));
-  };
-
-  const updateKra = (id: string, field: keyof KRAEntry, value: any) => {
-    if (!canEditMain) return;
-    setContract(prev => ({
-      ...prev,
-      kraEntries: (prev.kraEntries || []).map(k => k.id === id ? { ...k, [field]: value } : k)
-    }));
-  };
-
-  const updateCriteria = (id: string, key: keyof CriteriaValues, value: string) => {
-    if (!canEditMain) return;
-    setContract(prev => ({
-      ...prev,
-      kraEntries: (prev.kraEntries || []).map(k => 
-        k.id === id ? { ...k, criteria: { ...k.criteria, [key]: value } } : k
-      )
-    }));
-  };
-
-  const updateCompetency = (id: string, score: number) => {
-    if (!canEditMain) return;
-    setContract(prev => ({
-      ...prev,
-      competencyEntries: prev.competencyEntries.map(c => c.id === id ? { ...c, score } : c)
-    }));
+    // Fixed: Casting to avoid unknown error
+    setContract(prev => ({ ...prev, kraEntries: [...(prev.kraEntries as KRAEntry[] || []), newKra] }));
   };
 
   const handleSubmit = (nextStatus: FormStatus) => {
     if (nextStatus === FormStatus.SUBMITTED) {
-      if (!contract.periodFrom || !contract.periodTo) {
-        alert("Please define the appraisal start and end dates.");
-        return;
-      }
-      if (!contract.supervisorId) {
-        alert("Please select a Supervisor.");
-        return;
-      }
-      if (contract.kraEntries.length === 0) {
-        alert("At least one Employee Task (KRA) is required.");
-        return;
-      }
-      if (totalWeight !== 100) {
-        alert(`Total weight sum for Employee Tasks must be 100%. Current: ${totalWeight}%`);
-        return;
-      }
-      if (!contract.employeeSigned) {
-        alert("Please check the Employee Declaration before submitting.");
-        return;
-      }
+      if (!contract.periodFrom || !contract.periodTo) { alert("Please define the appraisal start and end dates."); return; }
+      if (!contract.supervisorId) { alert("Please select a Supervisor."); return; }
+      if (contract.kraEntries.length === 0) { alert("At least one Employee Task (KRA) is required."); return; }
+      if (totalWeight !== 100) { alert(`Total weight sum for Employee Tasks must be 100%. Current: ${totalWeight}%`); return; }
+      if (!contract.employeeSigned) { alert("Please check the Employee Declaration before submitting."); return; }
     }
-
     const now = Date.now();
-    const payload: PerformanceContract = {
-      ...contract,
-      status: nextStatus,
-      updatedAt: now,
-      employeeSignedDate: contract.employeeSigned && !contract.employeeSignedDate ? now : contract.employeeSignedDate,
-    };
-    
+    const payload: PerformanceContract = { ...contract, status: nextStatus, updatedAt: now, employeeSignedDate: contract.employeeSigned && !contract.employeeSignedDate ? now : contract.employeeSignedDate };
     upsertContract(payload);
     onClose();
   };
 
+  // Group competencies for rendering
+  const competencyGroups = useMemo(() => {
+    const groups: Record<string, CompetencyEntry[]> = {
+      'Generic': contract.competencyEntries.filter(c => c.category === 'Generic'),
+      'Functional': contract.competencyEntries.filter(c => c.category === 'Functional'),
+      'Ethics': contract.competencyEntries.filter(c => c.category === 'Ethics'),
+      'Operations': contract.competencyEntries.filter(c => c.category === 'Operations'),
+    };
+    return groups;
+  }, [contract.competencyEntries]);
+
   return (
     <div className="fixed inset-0 z-50 glass-modal flex items-center justify-center p-2 md:p-4">
-      <div className="bg-slate-900 border border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] w-[96vw] md:w-full max-w-[95vw] max-h-[96vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-slate-900 border border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] w-[96vw] md:w-full max-w-[95vw] max-h-[96vh] flex flex-col shadow-2xl overflow-hidden reveal">
         
         {/* Header */}
         <div className="p-6 md:p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
@@ -205,304 +208,207 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-16">
           
-          {/* SECTION A: APPRAISAL / CONTRACT PERIOD */}
-          <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">A</span>
-              Appraisal / Contract Period
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Start Date</label>
-                <input 
-                  type="date" 
-                  value={contract.periodFrom || ''} 
-                  onChange={e => setContract({...contract, periodFrom: e.target.value})}
-                  disabled={!canEditMain}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">End Date</label>
-                <input 
-                  type="date" 
-                  value={contract.periodTo || ''} 
-                  onChange={e => setContract({...contract, periodTo: e.target.value})}
-                  disabled={!canEditMain}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+          {/* SECTION A & B: Periods & Employee */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="space-y-6">
+                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">A</span> Appraisal Period</h3>
+                <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+                    <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Start Date</label><input type="date" value={contract.periodFrom || ''} onChange={e => setContract({...contract, periodFrom: e.target.value})} disabled={!canEditMain} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                    <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-2">End Date</label><input type="date" value={contract.periodTo || ''} onChange={e => setContract({...contract, periodTo: e.target.value})} disabled={!canEditMain} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                </div>
+            </div>
+            <div className="space-y-6">
+                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">B</span> Employee Information</h3>
+                <div className="grid grid-cols-2 gap-4 bg-white/5 p-6 rounded-3xl border border-white/5">
+                    <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">Name</label><p className="font-bold text-white text-sm truncate uppercase">{contract.employeeFirstName} {contract.employeeSurname}</p></div>
+                    <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">IPPIS</label><p className="font-bold text-white text-sm">{contract.employeeIppis}</p></div>
+                    <div className="col-span-2"><label className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">Department</label><p className="font-bold text-indigo-400 text-sm uppercase">{contract.employeeDepartment}</p></div>
+                </div>
             </div>
           </section>
 
-          {/* SECTION B: EMPLOYEE INFORMATION */}
-          <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">B</span>
-              Employee Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.employeeSurname}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.employeeFirstName}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Other Names</label><p className="font-bold text-white uppercase">{contract.employeeOtherNames || 'N/A'}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.employeeIppis}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.employeeDesignation}</p></div>
-              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label><p className="font-bold text-white uppercase">{contract.employeeDepartment}</p></div>
+          {/* SECTION C & D: Supervisor & Officer */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="space-y-6">
+                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">C</span> Supervisor Information</h3>
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
+                    <select value={contract.supervisorId || ''} onChange={e => handleSupervisorChange(e.target.value)} disabled={!canEditMain} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="">-- Select Supervisor --</option>
+                      {supervisors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                    {contract.supervisorId && (
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                            <div><label className="text-[9px] text-slate-500 font-bold uppercase block">IPPIS</label><p className="font-bold text-white text-xs">{contract.supervisorIppis}</p></div>
+                            <div><label className="text-[9px] text-slate-500 font-bold uppercase block">Designation</label><p className="font-bold text-white text-xs truncate uppercase">{contract.supervisorDesignation}</p></div>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="space-y-6">
+                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">D</span> Counter-Signing Officer</h3>
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
+                    <select value={contract.officerId || ''} onChange={e => handleOfficerChange(e.target.value)} disabled={!canEditMain} className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="">-- Select Officer --</option>
+                      {ctos.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                    </select>
+                    {contract.officerId && (
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                            <div><label className="text-[9px] text-slate-500 font-bold uppercase block">IPPIS</label><p className="font-bold text-white text-xs">{contract.officerIppis}</p></div>
+                            <div><label className="text-[9px] text-slate-500 font-bold uppercase block">Designation</label><p className="font-bold text-white text-xs truncate uppercase">{contract.officerDesignation}</p></div>
+                        </div>
+                    )}
+                </div>
             </div>
           </section>
 
-          {/* SECTION C: SUPERVISOR INFORMATION */}
-          <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">C</span>
-              Supervisor Information
-            </h3>
-            <div className="space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-              <div className="max-w-md">
-                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Select Supervisor</label>
-                <select 
-                  value={contract.supervisorId || ''} 
-                  onChange={e => handleSupervisorChange(e.target.value)}
-                  disabled={!canEditMain}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">-- Choose Supervisor --</option>
-                  {supervisors.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.department})</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-4 border-t border-white/5">
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.supervisorSurname || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.supervisorFirstName || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.supervisorIppis || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Email</label><p className="font-bold text-white italic">{contract.supervisorEmail || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.supervisorDesignation || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label><p className="font-bold text-white uppercase">{contract.supervisorDepartment || '...'}</p></div>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION D: COUNTER-SIGNING OFFICERS INFORMATION */}
-          <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">D</span>
-              Counter-Signing Officers Information
-            </h3>
-            <div className="space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-              <div className="max-w-md">
-                <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Select Officer</label>
-                <select 
-                  value={contract.officerId || ''} 
-                  onChange={e => handleOfficerChange(e.target.value)}
-                  disabled={!canEditMain}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">-- Choose Officer --</option>
-                  {ctos.map(o => (
-                    <option key={o.id} value={o.id}>{o.name} ({o.designation})</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-4 border-t border-white/5">
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.officerSurname || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.officerFirstName || '...'}</p></div>
-                <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.officerIppis || '...'}</p></div>
-                <div className="md:col-span-2"><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.officerDesignation || '...'}</p></div>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION E: EMPLOYEE TASK (Matrix) */}
+          {/* SECTION E: EMPLOYEE TASK */}
           <section className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">E</span>
-                Employee Task (KRA Matrix)
-              </h3>
-              {canEditMain && (
-                <button onClick={addKra} className="bg-indigo-600/20 text-indigo-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 hover:bg-indigo-600/30 transition-all">+ Add Task</button>
-              )}
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">E</span> Employee Task Matrix</h3>
+              {canEditMain && <button onClick={addKra} className="bg-indigo-600/20 text-indigo-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 hover:bg-indigo-600/30 transition-all">+ Add Task</button>}
             </div>
-            
-            <div className="overflow-x-auto border border-white/10 rounded-3xl bg-slate-950 shadow-2xl">
-              <table className="w-full text-left text-[10px] min-w-[1400px] border-collapse">
-                <thead className="bg-amber-500 text-slate-900">
+            <div className="overflow-x-auto glass-card rounded-3xl">
+              <table className="w-full text-left text-[10px] min-w-[1400px]">
+                <thead className="bg-indigo-600 text-white">
                   <tr>
-                    <th rowSpan={2} className="px-3 py-4 font-black uppercase tracking-tighter text-center border-r border-slate-900/10 w-10">S/N</th>
-                    <th rowSpan={2} className="px-4 py-4 font-black uppercase tracking-tighter border-r border-slate-900/10 w-48">Key Result Areas</th>
-                    <th rowSpan={2} className="px-2 py-4 font-black uppercase tracking-tighter text-center border-r border-slate-900/10 w-16">Weight</th>
-                    <th rowSpan={2} className="px-4 py-4 font-black uppercase tracking-tighter border-r border-slate-900/10 w-56">Objectives</th>
-                    <th colSpan={6} className="px-4 py-2 font-black uppercase tracking-widest text-center border-b border-slate-900/10 border-r border-slate-900/10">Criteria Values</th>
-                    <th rowSpan={2} className="px-2 py-4 font-black uppercase tracking-tighter text-center border-r border-slate-900/10 w-16">Weight</th>
-                    <th rowSpan={2} className="px-2 py-4 font-black uppercase tracking-tighter text-center border-r border-slate-900/10 w-20">Graded Weight</th>
-                    <th rowSpan={2} className="px-4 py-4 font-black uppercase tracking-tighter border-r border-slate-900/10 w-48">KPIs</th>
-                    <th rowSpan={2} className="px-2 py-4 font-black uppercase tracking-tighter text-center border-r border-slate-900/10 w-16">Target Set</th>
-                    <th rowSpan={2} className="px-4 py-4 font-black uppercase tracking-tighter w-24">Unit of Measurement</th>
+                    <th rowSpan={2} className="px-4 py-4 font-black text-center w-10">S/N</th>
+                    <th rowSpan={2} className="px-4 py-4 font-black w-56">Key Result Areas</th>
+                    <th rowSpan={2} className="px-2 py-4 font-black text-center w-16">Weight</th>
+                    <th rowSpan={2} className="px-4 py-4 font-black w-64">Objectives</th>
+                    <th colSpan={6} className="px-4 py-2 font-black text-center border-b border-white/10">Criteria Values</th>
+                    <th rowSpan={2} className="px-2 py-4 font-black text-center w-20">Graded Weight</th>
+                    <th rowSpan={2} className="px-4 py-4 font-black w-64">KPIs</th>
+                    <th rowSpan={2} className="px-4 py-4 font-black text-center w-24">Unit</th>
                   </tr>
-                  <tr className="bg-amber-400/90">
-                    <th className="px-1 py-2 font-black text-center border-r border-slate-900/10 w-12">O</th>
-                    <th className="px-1 py-2 font-black text-center border-r border-slate-900/10 w-12">E</th>
-                    <th className="px-1 py-2 font-black text-center border-r border-slate-900/10 w-12">VG</th>
-                    <th className="px-1 py-2 font-black text-center border-r border-slate-900/10 w-12">G</th>
-                    <th className="px-1 py-2 font-black text-center border-r border-slate-900/10 w-12">F</th>
-                    <th className="px-1 py-2 font-black text-center border-r border-slate-900/10 w-12">P</th>
+                  <tr className="bg-indigo-500/50">
+                    {['O','E','VG','G','F','P'].map(l => <th key={l} className="px-1 py-2 font-black text-center w-12">{l}</th>)}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {contract.kraEntries.length === 0 && (
-                    <tr><td colSpan={16} className="py-20 text-center text-slate-500 font-bold uppercase tracking-widest">No matrix entries added yet.</td></tr>
-                  )}
-                  {contract.kraEntries.map((k, idx) => (
+                  {/* Fixed typing for map call to avoid unknown error on line 349 (approx) */}
+                  {(contract.kraEntries as KRAEntry[] || []).map((k, idx) => (
                     <tr key={k.id} className="hover:bg-white/5 transition-colors group">
-                      <td className="px-3 py-2 text-center text-slate-500 font-black border-r border-white/5">{idx + 1}</td>
-                      <td className="p-1 border-r border-white/5"><textarea value={k.area} onChange={e => updateKra(k.id, 'area', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
-                      <td className="p-1 border-r border-white/5"><input type="number" value={k.weight} onChange={e => updateKra(k.id, 'weight', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center font-black text-white focus:ring-1 focus:ring-indigo-500 rounded outline-none" /></td>
-                      <td className="p-1 border-r border-white/5"><textarea value={k.objectives} onChange={e => updateKra(k.id, 'objectives', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
-                      
-                      <td className="p-0 border-r border-white/5"><input value={k.criteria.o} onChange={e => updateCriteria(k.id, 'o', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="O" /></td>
-                      <td className="p-0 border-r border-white/5"><input value={k.criteria.e} onChange={e => updateCriteria(k.id, 'e', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="E" /></td>
-                      <td className="p-0 border-r border-white/5"><input value={k.criteria.vg} onChange={e => updateCriteria(k.id, 'vg', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="VG" /></td>
-                      <td className="p-0 border-r border-white/5"><input value={k.criteria.g} onChange={e => updateCriteria(k.id, 'g', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="G" /></td>
-                      <td className="p-0 border-r border-white/5"><input value={k.criteria.f} onChange={e => updateCriteria(k.id, 'f', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="F" /></td>
-                      <td className="p-0 border-r border-white/5"><input value={k.criteria.p} onChange={e => updateCriteria(k.id, 'p', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="P" /></td>
-
-                      <td className="p-1 border-r border-white/5"><input type="number" value={k.objWeight} onChange={e => updateKra(k.id, 'objWeight', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center font-black text-white outline-none" /></td>
-                      <td className="p-1 border-r border-white/5"><input type="number" value={k.gradedWeight} onChange={e => updateKra(k.id, 'gradedWeight', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center font-black text-emerald-400 outline-none" /></td>
-                      
-                      <td className="p-1 border-r border-white/5"><textarea value={k.kpis} onChange={e => updateKra(k.id, 'kpis', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
-                      <td className="p-1 border-r border-white/5"><input type="number" value={k.target} onChange={e => updateKra(k.id, 'target', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center font-black text-white outline-none" /></td>
-                      <td className="p-1">
-                        <select value={k.unit} onChange={e => updateKra(k.id, 'unit', e.target.value)} disabled={!canEditMain} className="w-full bg-slate-900/50 p-2 text-slate-300 focus:ring-1 focus:ring-indigo-500 rounded outline-none border-none text-[9px] font-bold uppercase">
-                          <option>Percentage</option>
-                          <option>Quantity</option>
-                          <option>Rating</option>
-                          <option>Time-based</option>
-                        </select>
-                      </td>
+                      <td className="px-4 py-3 text-center text-slate-500 font-black">{idx + 1}</td>
+                      <td className="p-2"><textarea value={k.area} onChange={e => updateKra(k.id, 'area', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
+                      <td className="p-2"><input type="number" value={k.weight} onChange={e => updateKra(k.id, 'weight', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center font-black text-white outline-none" /></td>
+                      <td className="p-2"><textarea value={k.objectives} onChange={e => updateKra(k.id, 'objectives', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
+                      {['o','e','vg','g','f','p'].map(key => (
+                        <td key={key} className="p-0 border-r border-white/5"><input value={(k.criteria as any)[key]} onChange={e => updateCriteria(k.id, key as any, e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder={key.toUpperCase()} /></td>
+                      ))}
+                      <td className="p-2 text-center font-black text-emerald-400">{k.gradedWeight}%</td>
+                      <td className="p-2"><textarea value={k.kpis} onChange={e => updateKra(k.id, 'kpis', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
+                      <td className="p-2 text-center"><span className="text-[9px] font-black uppercase text-indigo-400">{k.unit}</span></td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr className="bg-white/5">
-                    <td colSpan={2} className="px-4 py-4 text-right font-black text-slate-500 uppercase">KRA Total:</td>
-                    <td className={`px-2 py-4 text-center font-black text-sm ${totalWeight === 100 ? 'text-emerald-400' : 'text-red-400'}`}>{totalWeight}%</td>
-                    <td colSpan={7}></td>
-                    <td className="px-2 py-4 text-right font-black text-slate-500 uppercase">Obj Total:</td>
-                    <td className="px-2 py-4 text-center font-black text-slate-200">
-                      {contract.kraEntries.reduce((sum, k) => sum + (k.objWeight || 0), 0)}%
-                    </td>
-                    <td colSpan={4}></td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           </section>
 
-          {/* SECTION F: GENERIC COMPETENCE */}
-          <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">F</span>
-              Generic Competence Assessment
-            </h3>
+          {/* SECTION F: COMPETENCIES */}
+          <section className="space-y-8">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">F</span> Competency Assessment</h3>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Legend */}
-              <div className="lg:col-span-1 bg-white/5 p-6 rounded-3xl border border-white/5">
-                <h4 className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-4">Rating Legend</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-emerald-500 text-slate-900 flex items-center justify-center font-black text-[10px]">5</span> <p className="text-[10px] text-slate-300">Exceptional Performance</p></div>
-                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-indigo-500 text-white flex items-center justify-center font-black text-[10px]">4</span> <p className="text-[10px] text-slate-300">Commendable Achievement</p></div>
-                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-blue-500 text-white flex items-center justify-center font-black text-[10px]">3</span> <p className="text-[10px] text-slate-300">Satisfactory Standing</p></div>
-                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-amber-500 text-slate-900 flex items-center justify-center font-black text-[10px]">2</span> <p className="text-[10px] text-slate-300">Improvement Needed</p></div>
-                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center font-black text-[10px]">1</span> <p className="text-[10px] text-slate-300">Unsatisfactory Level</p></div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+                {/* Legend Panel */}
+                <div className="lg:col-span-1 space-y-8">
+                    <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5">
+                        <h4 className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-6">Rating Scale</h4>
+                        <div className="space-y-4">
+                            {[
+                                { s: 5, t: 'Exceptional', c: 'bg-emerald-500 shadow-emerald-500/20' },
+                                { s: 4, t: 'Commendable', c: 'bg-indigo-500 shadow-indigo-500/20' },
+                                { s: 3, t: 'Satisfactory', c: 'bg-blue-500 shadow-blue-500/20' },
+                                { s: 2, t: 'Needs Impr.', c: 'bg-amber-500 shadow-amber-500/20' },
+                                { s: 1, t: 'Unsatisfactory', c: 'bg-red-500 shadow-red-500/20' },
+                            ].map(l => (
+                                <div key={l.s} className="flex items-center gap-4">
+                                    <span className={`w-8 h-8 rounded-xl ${l.c} text-white flex items-center justify-center font-black text-[11px] shadow-lg`}>{l.s}</span>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{l.t}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-              </div>
 
-              {/* Assessment Table */}
-              <div className="lg:col-span-2 overflow-hidden border border-white/10 rounded-3xl bg-white/5">
-                <table className="w-full text-left text-[10px]">
-                  <thead className="bg-white/5">
-                    <tr>
-                      <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest">Competency Area</th>
-                      <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest text-center w-32">Rating (1-5)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {contract.competencyEntries.map(c => (
-                      <tr key={c.id} className="hover:bg-white/5 transition-colors">
-                        <td className="px-5 py-4">
-                          <p className="font-bold text-slate-200">{c.name}</p>
-                          <p className="text-[9px] text-slate-500 mt-0.5">{c.description}</p>
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          <select 
-                            value={c.score} 
-                            onChange={e => updateCompetency(c.id, Number(e.target.value))}
-                            disabled={!canEditMain}
-                            className="bg-slate-900 border border-white/10 rounded-lg p-2 text-center text-indigo-400 font-black outline-none w-20"
-                          >
-                            <option value={0}>-</option>
-                            <option value={5}>5</option>
-                            <option value={4}>4</option>
-                            <option value={3}>3</option>
-                            <option value={2}>2</option>
-                            <option value={1}>1</option>
-                          </select>
-                        </td>
-                      </tr>
+                {/* Categories Panels */}
+                <div className="lg:col-span-3 space-y-10">
+                    {Object.entries(competencyGroups).map(([groupName, items], gIdx) => (
+                        <div key={groupName} className="space-y-4">
+                            <div className="flex items-center gap-4 mb-2">
+                                <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">{gIdx + 1}. {groupName === 'Operations' ? 'Section 6: ' + groupName : groupName} Competencies</span>
+                                <div className="h-px bg-white/10 flex-1"></div>
+                            </div>
+                            <div className="overflow-hidden border border-white/10 rounded-3xl bg-white/[0.02]">
+                                <table className="w-full text-left text-[10px]">
+                                    <thead className="bg-white/[0.03]">
+                                        <tr>
+                                            <th className="px-6 py-4 font-black text-slate-500 uppercase tracking-widest">Description</th>
+                                            <th className="px-6 py-4 font-black text-slate-500 uppercase tracking-widest text-center w-32">Rating (1-5)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {(items as CompetencyEntry[] || []).map(c => (
+                                            <tr key={c.id} className="hover:bg-white/[0.03] transition-colors">
+                                                <td className="px-6 py-5">
+                                                    <p className="font-black text-slate-200 mb-1">{c.name}</p>
+                                                    <p className="text-[9px] text-slate-500 leading-relaxed italic">{c.description}</p>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <select 
+                                                        value={c.score} 
+                                                        onChange={e => updateCompetency(c.id, Number(e.target.value))}
+                                                        disabled={!canEditMain}
+                                                        className="bg-slate-900 border border-white/10 rounded-xl p-3 text-center text-indigo-400 font-black outline-none w-20 cursor-pointer hover:border-indigo-500/50"
+                                                    >
+                                                        <option value={0}>-</option>
+                                                        <option value={5}>5</option>
+                                                        <option value={4}>4</option>
+                                                        <option value={3}>3</option>
+                                                        <option value={2}>2</option>
+                                                        <option value={1}>1</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </div>
             </div>
           </section>
 
           {/* SECTION G: EMPLOYEE DECLARATION */}
           <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">G</span>
-              Employee Declaration
-            </h3>
-            <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-6">
-              <div className="flex items-start gap-4">
-                <input 
-                  type="checkbox" 
-                  checked={contract.employeeSigned} 
-                  onChange={e => setContract({...contract, employeeSigned: e.target.checked})}
-                  disabled={!isEmployee || !isDraft}
-                  className="w-6 h-6 rounded-lg mt-1 bg-slate-900 border-white/10 text-indigo-600 focus:ring-offset-slate-900"
-                />
-                <p className="text-sm text-slate-400 leading-relaxed italic">
-                  I, <span className="text-white font-bold uppercase">{contract.employeeFirstName} {contract.employeeSurname}</span>, hereby declare that I have discussed and agreed on the performance tasks, level of assessment and targets defined in this contract.
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3"><span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">G</span> Declaration</h3>
+            <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 space-y-8 flex flex-col items-center text-center">
+              <div className="max-w-2xl space-y-6">
+                <div className="inline-flex items-center gap-4 bg-indigo-500/10 px-8 py-3 rounded-full border border-indigo-500/20">
+                    <input type="checkbox" checked={contract.employeeSigned} onChange={e => setContract({...contract, employeeSigned: e.target.checked})} disabled={!isEmployee || !isDraft} className="w-6 h-6 rounded-lg bg-slate-900 border-white/20 text-indigo-600 focus:ring-0 focus:ring-offset-0" />
+                    <span className="text-xs text-indigo-400 font-black uppercase tracking-widest">I Agree to the Defined Terms</span>
+                </div>
+                <p className="text-sm text-slate-400 leading-[1.8] italic">
+                  I, <span className="text-white font-black uppercase tracking-wider">{contract.employeeFirstName} {contract.employeeSurname}</span>, hereby declare that I have discussed and agreed on the performance tasks, level of assessment and targets defined in this contract for the specified period.
                 </p>
+                {contract.employeeSignedDate && <p className="text-[10px] text-emerald-400 uppercase font-black tracking-[0.3em]">Authenticated Trace: {new Date(contract.employeeSignedDate).toLocaleString()}</p>}
               </div>
-              {contract.employeeSignedDate && (
-                <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-widest">Signed on: {new Date(contract.employeeSignedDate).toLocaleDateString()}</p>
-              )}
             </div>
           </section>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 md:p-10 bg-white/5 border-t border-white/5 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
+        <div className="p-8 md:p-12 bg-white/5 border-t border-white/5 flex flex-col sm:flex-row justify-end gap-6">
           {isEmployee && isDraft && (
             <>
-              <button onClick={() => handleSubmit(FormStatus.DRAFT)} className="px-10 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.2em]">Save as Draft</button>
-              <button 
-                onClick={() => handleSubmit(FormStatus.SUBMITTED)} 
-                disabled={!contract.employeeSigned}
-                className={`px-12 py-4 font-black rounded-2xl shadow-2xl transition-all text-[10px] uppercase tracking-[0.2em] shimmer-container ${contract.employeeSigned ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
-              >
-                Agree & Submit
-              </button>
+              <button onClick={() => handleSubmit(FormStatus.DRAFT)} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.3em]">Save Progress</button>
+              <button onClick={() => handleSubmit(FormStatus.SUBMITTED)} disabled={!contract.employeeSigned} className={`px-14 py-5 font-black rounded-2xl shadow-2xl transition-all text-[10px] uppercase tracking-[0.3em] shimmer-container ${contract.employeeSigned ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>Confirm & Submit Contract</button>
             </>
           )}
-          {!isDraft && (
-            <button onClick={onClose} className="px-10 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.2em]">Exit View</button>
-          )}
+          {!isDraft && <button onClick={onClose} className="px-12 py-5 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-[0.3em]">Exit View</button>}
         </div>
       </div>
     </div>

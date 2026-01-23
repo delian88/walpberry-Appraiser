@@ -5,7 +5,7 @@ import { User, UserRole, AppraisalStatus, PerformanceContract, AnnualAppraisal }
 import { DEPARTMENTS, STATUS_LABELS } from '../constants';
 
 export const HRDashboard: React.FC = () => {
-  const { users, contracts, appraisals, upsertUser, deleteUser } = useAppContext();
+  const { users, contracts, appraisals, upsertUser, deleteUser, logout } = useAppContext();
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,18 +77,27 @@ export const HRDashboard: React.FC = () => {
                 placeholder="Search Identity..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full sm:w-80 bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full sm:w-64 lg:w-80 bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
               <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <button 
-              onClick={() => { setEditingUser(undefined); setShowUserModal(true); }} 
-              className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container"
-            >
-              + Register Colleague
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={logout}
+                className="px-6 py-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
+                Sign Out
+              </button>
+              <button 
+                onClick={() => { setEditingUser(undefined); setShowUserModal(true); }} 
+                className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-600/30 hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] transition-all shimmer-container"
+              >
+                + Register Colleague
+              </button>
+            </div>
           </div>
         </div>
 

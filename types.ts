@@ -60,6 +60,7 @@ export interface CompetencyEntry {
   name: string;
   description: string;
   score: number;
+  category: 'Generic' | 'Functional' | 'Ethics' | 'Operations';
 }
 
 export interface PerformanceContract {
@@ -95,7 +96,7 @@ export interface PerformanceContract {
   officerDesignation: string;
   // Section E (Employee Task)
   kraEntries: KRAEntry[];
-  // Section F (Generic Competence)
+  // Section F (Competencies)
   competencyEntries: CompetencyEntry[];
   // Declarations
   employeeSigned: boolean;
