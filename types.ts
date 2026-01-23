@@ -6,7 +6,6 @@ export enum UserRole {
   ADMIN = 'ADMIN'
 }
 
-// Fixed: Renamed FormStatus to AppraisalStatus and added missing members used in ReviewView.tsx
 export enum AppraisalStatus {
   DRAFT = 'DRAFT',
   SUBMITTED = 'SUBMITTED',
@@ -17,7 +16,6 @@ export enum AppraisalStatus {
   APPROVED_BY_CTO = 'APPROVED_BY_CTO'
 }
 
-// Alias for backward compatibility with existing components
 export type FormStatus = AppraisalStatus;
 export const FormStatus = AppraisalStatus;
 
@@ -68,12 +66,15 @@ export interface MonthlyTask {
 export interface MonthlyReview {
   id: string;
   employeeId: string;
-  reviewDate: string;
+  lastReviewDate: string;
+  todayDate: string;
   appraiserName: string;
+  appraiserRank: string;
   responsibilities: string;
   tasks: MonthlyTask[];
   appraiserComments: string;
   status: AppraisalStatus;
+  updatedAt: number;
 }
 
 export interface AppraisalKRA extends KRAEntry {
@@ -98,7 +99,6 @@ export interface AnnualAppraisal {
   certifiedAt?: number;
 }
 
-// Fixed: Added missing ReviewComment interface for ReviewView.tsx
 export interface ReviewComment {
   authorId: string;
   authorName: string;
@@ -107,7 +107,6 @@ export interface ReviewComment {
   timestamp: number;
 }
 
-// Fixed: Added missing Appraisal interface for ReviewView.tsx and Certificate.tsx
 export interface Appraisal {
   id: string;
   employeeName: string;
