@@ -55,13 +55,20 @@ export interface KRAEntry {
   unit: 'Percentage' | 'Quantity' | 'Rating' | 'Time-based';
 }
 
+export interface CompetencyEntry {
+  id: string;
+  name: string;
+  description: string;
+  score: number;
+}
+
 export interface PerformanceContract {
   id: string;
   employeeId: string;
   // Section A
   periodFrom: string;
   periodTo: string;
-  // Section B (Captured from User but stored for history)
+  // Section B
   employeeFirstName: string;
   employeeSurname: string;
   employeeOtherNames?: string;
@@ -84,8 +91,10 @@ export interface PerformanceContract {
   officerOtherNames?: string;
   officerIppis: string;
   officerDesignation: string;
-  // Section E
+  // Section E (Employee Task)
   kraEntries: KRAEntry[];
+  // Section F (Generic Competence)
+  competencyEntries: CompetencyEntry[];
   // Declarations
   employeeSigned: boolean;
   employeeSignedDate?: number;

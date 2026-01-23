@@ -1,10 +1,18 @@
 
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { PerformanceContract, FormStatus, KRAEntry, UserRole, CriteriaValues } from '../types';
+import { PerformanceContract, FormStatus, KRAEntry, UserRole, CriteriaValues, CompetencyEntry } from '../types';
 
 export const ContractForm: React.FC<{ onClose: () => void, initialData?: PerformanceContract }> = ({ onClose, initialData }) => {
   const { currentUser, upsertContract } = useAppContext();
+
+  // Initial competencies
+  const defaultCompetencies: CompetencyEntry[] = [
+    { id: 'c1', name: 'Leadership Skills', description: 'Ability to guide, inspire and direct team members towards goals.', score: 0 },
+    { id: 'c2', name: 'Communication', description: 'Effectiveness in verbal and written information exchange.', score: 0 },
+    { id: 'c3', name: 'Professionalism', description: 'Adherence to corporate ethics, punctuality and conduct.', score: 0 },
+    { id: 'c4', name: 'Technical Proficiency', description: 'Depth of knowledge and skill in assigned technical domain.', score: 0 }
+  ];
 
   // Initialization logic
   const [contract, setContract] = useState<PerformanceContract>(initialData || {
@@ -31,6 +39,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
     officerIppis: 'IP-1001',
     officerDesignation: 'Chief Technology Officer',
     kraEntries: [],
+    competencyEntries: defaultCompetencies,
     employeeSigned: false,
     supervisorSigned: false,
     officerSigned: false,
@@ -89,6 +98,14 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
     }));
   };
 
+  const updateCompetency = (id: string, score: number) => {
+    if (!canEditMain) return;
+    setContract(prev => ({
+      ...prev,
+      competencyEntries: prev.competencyEntries.map(c => c.id === id ? { ...c, score } : c)
+    }));
+  };
+
   const handleSubmit = (nextStatus: FormStatus) => {
     if (nextStatus === FormStatus.SUBMITTED) {
       if (!contract.periodFrom || !contract.periodTo) {
@@ -96,15 +113,15 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
         return;
       }
       if (contract.kraEntries.length === 0) {
-        alert("At least one Key Result Area (KRA) is required.");
+        alert("At least one Employee Task (KRA) is required.");
         return;
       }
       if (totalWeight !== 100) {
-        alert(`Total KRA weight must be exactly 100%. Current total: ${totalWeight}%`);
+        alert(`Total weight sum for Employee Tasks must be 100%. Current: ${totalWeight}%`);
         return;
       }
       if (!contract.employeeSigned) {
-        alert("You must check the Employee Declaration box before submitting.");
+        alert("Please check the Employee Declaration before submitting.");
         return;
       }
     }
@@ -144,7 +161,7 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
           {/* SECTION A: APPRAISAL / CONTRACT PERIOD */}
           <section className="space-y-6">
             <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">A</span>
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">A</span>
               Appraisal / Contract Period
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
@@ -173,11 +190,11 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
             </div>
           </section>
 
-          {/* SECTION B: EMPLOYEE IDENTIFICATION */}
+          {/* SECTION B: EMPLOYEE INFORMATION */}
           <section className="space-y-6">
             <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">B</span>
-              Employee Identification
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">B</span>
+              Employee Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
               <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.employeeSurname}</p></div>
@@ -189,15 +206,45 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
             </div>
           </section>
 
-          {/* SECTION E: KEY RESULT AREAS (KRAs) & OBJECTIVES */}
+          {/* SECTION C: SUPERVISOR INFORMATION */}
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">C</span>
+              Supervisor Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.supervisorSurname}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.supervisorFirstName}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.supervisorIppis}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Email</label><p className="font-bold text-white italic">{contract.supervisorEmail}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.supervisorDesignation}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label><p className="font-bold text-white uppercase">{contract.supervisorDepartment}</p></div>
+            </div>
+          </section>
+
+          {/* SECTION D: COUNTER-SIGNING OFFICERS INFORMATION */}
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">D</span>
+              Counter-Signing Officers Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Surname</label><p className="font-bold text-white uppercase">{contract.officerSurname}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">First Name</label><p className="font-bold text-white uppercase">{contract.officerFirstName}</p></div>
+              <div><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">IPPIS Number</label><p className="font-bold text-white">{contract.officerIppis}</p></div>
+              <div className="md:col-span-2"><label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Designation</label><p className="font-bold text-white uppercase">{contract.officerDesignation}</p></div>
+            </div>
+          </section>
+
+          {/* SECTION E: EMPLOYEE TASK (Matrix) */}
           <section className="space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">E</span>
-                KRAs & Criteria Matrix
+                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">E</span>
+                Employee Task (KRA Matrix)
               </h3>
               {canEditMain && (
-                <button onClick={addKra} className="bg-indigo-600/20 text-indigo-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 hover:bg-indigo-600/30 transition-all">+ Add Row</button>
+                <button onClick={addKra} className="bg-indigo-600/20 text-indigo-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 hover:bg-indigo-600/30 transition-all">+ Add Task</button>
               )}
             </div>
             
@@ -236,7 +283,6 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                       <td className="p-1 border-r border-white/5"><input type="number" value={k.weight} onChange={e => updateKra(k.id, 'weight', Number(e.target.value))} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center font-black text-white focus:ring-1 focus:ring-indigo-500 rounded outline-none" /></td>
                       <td className="p-1 border-r border-white/5"><textarea value={k.objectives} onChange={e => updateKra(k.id, 'objectives', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-slate-200 focus:ring-1 focus:ring-indigo-500 rounded outline-none h-20 resize-none text-[10px]" /></td>
                       
-                      {/* Criteria Inputs */}
                       <td className="p-0 border-r border-white/5"><input value={k.criteria.o} onChange={e => updateCriteria(k.id, 'o', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="O" /></td>
                       <td className="p-0 border-r border-white/5"><input value={k.criteria.e} onChange={e => updateCriteria(k.id, 'e', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="E" /></td>
                       <td className="p-0 border-r border-white/5"><input value={k.criteria.vg} onChange={e => updateCriteria(k.id, 'vg', e.target.value)} disabled={!canEditMain} className="w-full bg-transparent p-2 text-center text-slate-300 outline-none" placeholder="VG" /></td>
@@ -274,13 +320,71 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                 </tfoot>
               </table>
             </div>
-            <p className="text-[9px] text-slate-500 italic">* Section E defines core performance expectations and measurable targets across multiple levels of achievement.</p>
           </section>
 
-          {/* SECTION F: EMPLOYEE DECLARATION */}
+          {/* SECTION F: GENERIC COMPETENCE */}
           <section className="space-y-6">
             <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">F</span>
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">F</span>
+              Generic Competence Assessment
+            </h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Legend */}
+              <div className="lg:col-span-1 bg-white/5 p-6 rounded-3xl border border-white/5">
+                <h4 className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-4">Rating Legend</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-emerald-500 text-slate-900 flex items-center justify-center font-black text-[10px]">5</span> <p className="text-[10px] text-slate-300">Exceptional Performance</p></div>
+                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-indigo-500 text-white flex items-center justify-center font-black text-[10px]">4</span> <p className="text-[10px] text-slate-300">Commendable Achievement</p></div>
+                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-blue-500 text-white flex items-center justify-center font-black text-[10px]">3</span> <p className="text-[10px] text-slate-300">Satisfactory Standing</p></div>
+                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-amber-500 text-slate-900 flex items-center justify-center font-black text-[10px]">2</span> <p className="text-[10px] text-slate-300">Improvement Needed</p></div>
+                  <div className="flex items-center gap-3"><span className="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center font-black text-[10px]">1</span> <p className="text-[10px] text-slate-300">Unsatisfactory Level</p></div>
+                </div>
+              </div>
+
+              {/* Assessment Table */}
+              <div className="lg:col-span-2 overflow-hidden border border-white/10 rounded-3xl bg-white/5">
+                <table className="w-full text-left text-[10px]">
+                  <thead className="bg-white/5">
+                    <tr>
+                      <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest">Competency Area</th>
+                      <th className="px-5 py-4 font-black text-slate-500 uppercase tracking-widest text-center w-32">Rating (1-5)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {contract.competencyEntries.map(c => (
+                      <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-5 py-4">
+                          <p className="font-bold text-slate-200">{c.name}</p>
+                          <p className="text-[9px] text-slate-500 mt-0.5">{c.description}</p>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <select 
+                            value={c.score} 
+                            onChange={e => updateCompetency(c.id, Number(e.target.value))}
+                            disabled={!canEditMain}
+                            className="bg-slate-900 border border-white/10 rounded-lg p-2 text-center text-indigo-400 font-black outline-none w-20"
+                          >
+                            <option value={0}>-</option>
+                            <option value={5}>5</option>
+                            <option value={4}>4</option>
+                            <option value={3}>3</option>
+                            <option value={2}>2</option>
+                            <option value={1}>1</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION G: EMPLOYEE DECLARATION */}
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono">G</span>
               Employee Declaration
             </h3>
             <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-6">
@@ -293,27 +397,12 @@ export const ContractForm: React.FC<{ onClose: () => void, initialData?: Perform
                   className="w-6 h-6 rounded-lg mt-1 bg-slate-900 border-white/10 text-indigo-600 focus:ring-offset-slate-900"
                 />
                 <p className="text-sm text-slate-400 leading-relaxed italic">
-                  I, <span className="text-white font-bold uppercase">{contract.employeeFirstName} {contract.employeeSurname}</span>, hereby declare that I have discussed and agreed on the performance objectives and targets defined in this contract for the appraisal period.
+                  I, <span className="text-white font-bold uppercase">{contract.employeeFirstName} {contract.employeeSurname}</span>, hereby declare that I have discussed and agreed on the performance tasks, level of assessment and targets defined in this contract.
                 </p>
               </div>
               {contract.employeeSignedDate && (
                 <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-widest">Signed on: {new Date(contract.employeeSignedDate).toLocaleDateString()}</p>
               )}
-            </div>
-          </section>
-
-          {/* SECTION G & H: REMOVED FOR BREVITY IN DISPLAY BUT PERSIST IN LOGIC */}
-          {/* ... (Sections G & H as previously defined) */}
-          <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-              <span className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">G</span>
-              Supervisor Declaration
-            </h3>
-            <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
-              <div className="flex items-start gap-4 opacity-60">
-                <input type="checkbox" checked={contract.supervisorSigned} disabled className="w-5 h-5 rounded-lg mt-1" />
-                <p className="text-xs text-slate-400 italic">Supervisor sign-off happens during review phase.</p>
-              </div>
             </div>
           </section>
         </div>
