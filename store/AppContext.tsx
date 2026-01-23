@@ -11,7 +11,6 @@ interface AppContextType {
   upsertContract: (contract: PerformanceContract) => void;
   upsertMonthly: (review: MonthlyReview) => void;
   upsertAppraisal: (appraisal: AnnualAppraisal) => void;
-  // Added: updateAppraisal to support partial updates in ReviewView.tsx
   updateAppraisal: (id: string, updates: Partial<any>) => void;
   logout: () => void;
 }
@@ -42,8 +41,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const upsertContract = (contract: PerformanceContract) => {
     setContracts(prev => {
-      const exists = prev.find(c => c.id === contract.id);
-      return exists ? prev.map(c => c.id === contract.id ? contract : c) : [...prev, contract];
+      // If the new/updated contract is active, deactivate all other contracts for the same employee
+      let newContracts = prev;
+      if (contract.isActive) {
+        newContracts = prev.map(c => c.employeeId === contract.employeeId ? { ...c, isActive: false } : c);
+      }
+      
+      const exists = newContracts.find(c => c.id === contract.id);
+      return exists ? newContracts.map(c => c.id === contract.id ? contract : c) : [...newContracts, contract];
     });
   };
 
@@ -61,7 +66,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  // Fixed: Implemented updateAppraisal method
   const updateAppraisal = (id: string, updates: Partial<any>) => {
     setAppraisals(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };

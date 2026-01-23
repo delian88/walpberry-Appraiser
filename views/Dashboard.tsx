@@ -103,11 +103,16 @@ export const Dashboard: React.FC = () => {
                 {userContracts.map(c => (
                   <div key={c.id} className="glass-card p-8 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all hover:-translate-y-1 shimmer-container">
                     <div className="flex items-center gap-8">
-                       <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center text-slate-500 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-all">
+                       <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all ${c.isActive ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-white/5 text-slate-500 group-hover:bg-indigo-500/10 group-hover:text-indigo-400'}`}>
                           <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                        </div>
                        <div>
-                          <p className="text-xl font-black text-white">Performance Contract {new Date(c.updatedAt).getFullYear()}</p>
+                          <div className="flex items-center gap-3">
+                            <p className="text-xl font-black text-white">Performance Contract {new Date(c.updatedAt).getFullYear()}</p>
+                            <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${c.isActive ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+                                {c.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
                           <p className="text-xs text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">Period: {c.periodFrom} to {c.periodTo}</p>
                        </div>
                     </div>

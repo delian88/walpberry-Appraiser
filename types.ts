@@ -50,6 +50,7 @@ export interface PerformanceContract {
   periodTo: string;
   kraEntries: KRAEntry[];
   status: AppraisalStatus;
+  isActive: boolean;
   updatedAt: number;
 }
 
