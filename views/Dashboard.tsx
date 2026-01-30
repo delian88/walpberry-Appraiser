@@ -7,8 +7,9 @@ import { AppraisalForm } from './AppraisalForm';
 import { MonthlyReviewForm } from './MonthlyReviewForm';
 import { Certificate } from './Certificate';
 import { HRDashboard } from './HRDashboard';
+import { HistoryView } from './HistoryView';
 
-type Tab = 'CONTRACT' | 'MONTHLY' | 'ANNUAL' | 'HR';
+type Tab = 'CONTRACT' | 'MONTHLY' | 'ANNUAL' | 'HR' | 'LEDGER';
 
 export const Dashboard: React.FC = () => {
   const { 
@@ -62,7 +63,6 @@ export const Dashboard: React.FC = () => {
   const userAppraisals = appraisals.filter(a => isEmployee ? a.employeeId === currentUser.id : true);
   const userMonthly = monthlyReviews.filter(r => isEmployee ? r.employeeId === currentUser.id : true);
 
-  // Management Stats
   const pendingContractsCount = useMemo(() => contracts.filter(c => c.status === FormStatus.SUBMITTED).length, [contracts]);
   const pendingAppraisalsCount = useMemo(() => appraisals.filter(a => a.status === FormStatus.SUBMITTED).length, [appraisals]);
 
@@ -79,7 +79,7 @@ export const Dashboard: React.FC = () => {
     setShowMonthlyModal(true);
   };
 
-  const menuItems: Tab[] = isAdmin ? ['HR', 'CONTRACT', 'MONTHLY', 'ANNUAL'] : ['CONTRACT', 'MONTHLY', 'ANNUAL'];
+  const menuItems: Tab[] = isAdmin ? ['HR', 'CONTRACT', 'MONTHLY', 'ANNUAL', 'LEDGER'] : ['CONTRACT', 'MONTHLY', 'ANNUAL', 'LEDGER'];
 
   if (isLoading && contracts.length === 0) {
     return (
@@ -94,7 +94,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row p-6 md:p-8 gap-8">
-      {/* Sidebar Navigation */}
       <aside className="w-full md:w-80 emerald-sidebar rounded-[3rem] p-10 flex flex-col shrink-0 animate-fade-in">
         <div className="flex items-center gap-5 mb-16">
           <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center font-black italic text-2xl text-white shadow-lg">W</div>
@@ -117,7 +116,7 @@ export const Dashboard: React.FC = () => {
               {activeTab === t && <div className="absolute inset-0 bg-white/10"></div>}
               {activeTab === t && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500"></div>}
               <span className={`w-2 h-2 rounded-full transition-all ${activeTab === t ? 'bg-amber-400 scale-150' : 'bg-emerald-800'}`}></span>
-              {t === 'HR' ? 'Organization' : t.charAt(0) + t.slice(1).toLowerCase() + ' Cycle'}
+              {t === 'HR' ? 'Organization' : t === 'LEDGER' ? 'Corporate Ledger' : t.charAt(0) + t.slice(1).toLowerCase() + ' Cycle'}
             </button>
           ))}
         </nav>
@@ -140,14 +139,16 @@ export const Dashboard: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-12">
-          {/* Dashboard Header */}
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-8 pt-4">
             <div className="animate-slide-up">
-              <h1 className="text-6xl font-black text-emerald-950 tracking-tighter uppercase leading-none">{activeTab === 'HR' ? 'Governance' : activeTab}</h1>
-              <p className="text-slate-500 text-lg mt-3 font-medium tracking-tight">Managing the performance lifecycle with prestige.</p>
+              <h1 className="text-6xl font-black text-emerald-950 tracking-tighter uppercase leading-none">
+                {activeTab === 'HR' ? 'Governance' : activeTab === 'LEDGER' ? 'Ledger' : activeTab}
+              </h1>
+              <p className="text-slate-500 text-lg mt-3 font-medium tracking-tight">
+                {activeTab === 'LEDGER' ? 'Chronological record of corporate merit.' : 'Managing the performance lifecycle with prestige.'}
+              </p>
             </div>
             <div className="flex w-full sm:w-auto gap-4">
               {activeTab === 'CONTRACT' && isEmployee && (
@@ -162,49 +163,29 @@ export const Dashboard: React.FC = () => {
             </div>
           </header>
 
-          {/* Management Insight Row (Action Center for PM/CTO/Admin) */}
-          {isManagement && activeTab !== 'HR' && (
+          {isManagement && activeTab !== 'HR' && activeTab !== 'LEDGER' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up" style={{ animationDelay: '0.05s' }}>
-              <button 
-                onClick={() => setActiveTab('CONTRACT')}
-                className={`flex items-center gap-8 p-10 rounded-[3rem] border transition-all text-left group ${activeTab === 'CONTRACT' ? 'bg-emerald-900 border-emerald-800 shadow-2xl shadow-emerald-900/20' : 'bg-white border-emerald-900/5 shadow-xl hover:border-emerald-200'}`}
-              >
-                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 ${activeTab === 'CONTRACT' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-900'}`}>
-                  📜
-                </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${activeTab === 'CONTRACT' ? 'text-emerald-200/50' : 'text-slate-400'}`}>Contract Approval Queue</p>
-                  <div className="flex items-center gap-4">
-                    <p className={`text-4xl font-black ${activeTab === 'CONTRACT' ? 'text-white' : 'text-emerald-950'}`}>{pendingContractsCount}</p>
-                    {pendingContractsCount > 0 && (
-                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${activeTab === 'CONTRACT' ? 'bg-amber-500 text-white' : 'bg-emerald-900 text-white'}`}>Action Required</span>
-                    )}
-                  </div>
-                </div>
+              <button onClick={() => setActiveTab('CONTRACT')} className={`flex items-center gap-8 p-10 rounded-[3rem] border transition-all text-left group ${activeTab === 'CONTRACT' ? 'bg-emerald-900 border-emerald-800 shadow-2xl shadow-emerald-900/20' : 'bg-white border-emerald-900/5 shadow-xl hover:border-emerald-200'}`}>
+                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 ${activeTab === 'CONTRACT' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-900'}`}>📜</div>
+                <div><p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${activeTab === 'CONTRACT' ? 'text-emerald-200/50' : 'text-slate-400'}`}>Contract Approval Queue</p><div className="flex items-center gap-4"><p className={`text-4xl font-black ${activeTab === 'CONTRACT' ? 'text-white' : 'text-emerald-950'}`}>{pendingContractsCount}</p>{pendingContractsCount > 0 && <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${activeTab === 'CONTRACT' ? 'bg-amber-500 text-white' : 'bg-emerald-900 text-white'}`}>Action Required</span>}</div></div>
               </button>
-
-              <button 
-                onClick={() => setActiveTab('ANNUAL')}
-                className={`flex items-center gap-8 p-10 rounded-[3rem] border transition-all text-left group ${activeTab === 'ANNUAL' ? 'bg-amber-700 border-amber-800 shadow-2xl shadow-amber-900/20' : 'bg-white border-emerald-900/5 shadow-xl hover:border-emerald-200'}`}
-              >
-                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 ${activeTab === 'ANNUAL' ? 'bg-white/10 text-white' : 'bg-amber-50 text-amber-700'}`}>
-                  ⚖️
-                </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${activeTab === 'ANNUAL' ? 'text-amber-100/50' : 'text-slate-400'}`}>Pending Annual Audits</p>
-                  <div className="flex items-center gap-4">
-                    <p className={`text-4xl font-black ${activeTab === 'ANNUAL' ? 'text-white' : 'text-emerald-950'}`}>{pendingAppraisalsCount}</p>
-                    {pendingAppraisalsCount > 0 && (
-                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${activeTab === 'ANNUAL' ? 'bg-emerald-900 text-white' : 'bg-amber-900 text-white'}`}>Review Now</span>
-                    )}
-                  </div>
-                </div>
+              <button onClick={() => setActiveTab('ANNUAL')} className={`flex items-center gap-8 p-10 rounded-[3rem] border transition-all text-left group ${activeTab === 'ANNUAL' ? 'bg-amber-700 border-amber-800 shadow-2xl shadow-amber-900/20' : 'bg-white border-emerald-900/5 shadow-xl hover:border-emerald-200'}`}>
+                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 ${activeTab === 'ANNUAL' ? 'bg-white/10 text-white' : 'bg-amber-50 text-amber-700'}`}>⚖️</div>
+                <div><p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${activeTab === 'ANNUAL' ? 'text-amber-100/50' : 'text-slate-400'}`}>Pending Annual Audits</p><div className="flex items-center gap-4"><p className={`text-4xl font-black ${activeTab === 'ANNUAL' ? 'text-white' : 'text-emerald-950'}`}>{pendingAppraisalsCount}</p>{pendingAppraisalsCount > 0 && <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${activeTab === 'ANNUAL' ? 'bg-emerald-900 text-white' : 'bg-amber-900 text-white'}`}>Review Now</span>}</div></div>
               </button>
             </div>
           )}
 
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             {activeTab === 'HR' && <HRDashboard />}
+            {activeTab === 'LEDGER' && (
+              <HistoryView 
+                onViewContract={(c) => { setSelectedContract(c); setShowContractModal(true); }}
+                onViewAppraisal={(a) => { setSelectedAppraisal(a); setShowAppraisalModal(true); }}
+                onViewMonthly={(m) => { setSelectedMonthly(m); setShowMonthlyModal(true); }}
+                onViewCert={(a) => setViewingCert(a)}
+              />
+            )}
             
             {(activeTab === 'CONTRACT' || activeTab === 'MONTHLY' || activeTab === 'ANNUAL') && (
               <div className="grid grid-cols-1 gap-5">
@@ -213,7 +194,6 @@ export const Dashboard: React.FC = () => {
                       <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.3em]">No records in this sector.</p>
                    </div>
                 )}
-
                 {activeTab === 'CONTRACT' && userContracts.map(c => (
                   <div key={c.id} className="royal-card p-10 rounded-[3rem] flex items-center justify-between group">
                     <div className="flex items-center gap-10">
@@ -230,71 +210,30 @@ export const Dashboard: React.FC = () => {
                        </div>
                     </div>
                     <div className="flex items-center gap-8">
-                       <span className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                          c.status === FormStatus.APPROVED ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 
-                          c.status === FormStatus.SUBMITTED ? 'bg-amber-100 text-amber-800 border-amber-200 animate-pulse' :
-                          'bg-slate-50 text-slate-500 border-slate-100'
-                       }`}>{c.status}</span>
+                       <span className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${c.status === FormStatus.APPROVED ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : c.status === FormStatus.SUBMITTED ? 'bg-amber-100 text-amber-800 border-amber-200 animate-pulse' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>{c.status}</span>
                        <div className="flex gap-3">
-                          <button onClick={() => handleShare('CONTRACT', c.id)} className="p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl text-emerald-800 transition-all border border-slate-200">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                          </button>
+                          <button onClick={() => handleShare('CONTRACT', c.id)} className="p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl text-emerald-800 transition-all border border-slate-200"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg></button>
                           <button onClick={() => { setSelectedContract(c); setShowContractModal(true); }} className="btn-majestic px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Review & Approve</button>
                        </div>
                     </div>
                   </div>
                 ))}
-
                 {activeTab === 'MONTHLY' && userMonthly.map(m => (
                   <div key={m.id} className="royal-card p-10 rounded-[3rem] flex items-center justify-between group">
                     <div className="flex items-center gap-10">
-                       <div className="w-20 h-20 rounded-[2.5rem] bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-800">
-                          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                       </div>
-                       <div>
-                          <p className="text-2xl font-black text-emerald-950">{new Date(m.todayDate).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} Cycle Log</p>
-                          <div className="flex items-center gap-4 mt-2">
-                             <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{m.tasks.length} Responsibilities Monitored</p>
-                             {!isEmployee && (
-                                <>
-                                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                  <p className="text-[11px] text-amber-700 font-bold uppercase tracking-widest">Employee Profile Active</p>
-                                </>
-                             )}
-                          </div>
-                       </div>
+                       <div className="w-20 h-20 rounded-[2.5rem] bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-800"><svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                       <div><p className="text-2xl font-black text-emerald-950">{new Date(m.todayDate).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} Cycle Log</p><div className="flex items-center gap-4 mt-2"><p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{m.tasks.length} Responsibilities Monitored</p>{!isEmployee && <><span className="w-1 h-1 rounded-full bg-slate-300"></span><p className="text-[11px] text-amber-700 font-bold uppercase tracking-widest">Employee Profile Active</p></>}</div></div>
                     </div>
-                    <div className="flex items-center gap-8">
-                       <span className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${m.status === FormStatus.SUBMITTED ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>{m.status}</span>
-                       <button onClick={() => handleOpenMonthly(m)} className="bg-emerald-950 text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-800 shadow-xl transition-all">Inspect Log</button>
-                    </div>
+                    <div className="flex items-center gap-8"><span className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${m.status === FormStatus.SUBMITTED ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>{m.status}</span><button onClick={() => handleOpenMonthly(m)} className="bg-emerald-950 text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-800 shadow-xl transition-all">Inspect Log</button></div>
                   </div>
                 ))}
-
                 {activeTab === 'ANNUAL' && userAppraisals.map(a => (
                   <div key={a.id} className="royal-card p-10 rounded-[3rem] flex items-center justify-between group">
                     <div className="flex items-center gap-10">
-                       <div className="w-20 h-20 rounded-[2.5rem] bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 shadow-inner group-hover:scale-105 transition-transform">
-                          <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
-                       </div>
-                       <div>
-                          <p className="text-3xl font-black text-emerald-950">{a.finalRating} Rating</p>
-                          <div className="flex items-center gap-4 mt-2">
-                             <p className="text-[12px] text-slate-500 font-bold uppercase tracking-[0.2em]">Weighted Aggregate: {a.totalScore.toFixed(2)}%</p>
-                             {!isEmployee && (
-                                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-black uppercase">Review Candidate Active</span>
-                             )}
-                          </div>
-                       </div>
+                       <div className="w-20 h-20 rounded-[2.5rem] bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 shadow-inner group-hover:scale-105 transition-transform"><svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg></div>
+                       <div><p className="text-3xl font-black text-emerald-950">{a.finalRating} Rating</p><div className="flex items-center gap-4 mt-2"><p className="text-[12px] text-slate-500 font-bold uppercase tracking-[0.2em]">Weighted Aggregate: {a.totalScore.toFixed(2)}%</p>{!isEmployee && <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-black uppercase">Review Candidate Active</span>}</div></div>
                     </div>
-                    <div className="flex items-center gap-6">
-                      {a.status === FormStatus.CERTIFIED && (
-                        <button onClick={() => setViewingCert(a)} className="bg-amber-700 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-amber-700/20 hover:scale-[1.05] transition-all">Gold Certificate</button>
-                      )}
-                      {(isPM || isCTO || isAdmin) && a.status === FormStatus.SUBMITTED && (
-                        <button onClick={() => { setSelectedAppraisal(a); setShowAppraisalModal(true); }} className="btn-majestic px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">Appraise Now</button>
-                      )}
-                    </div>
+                    <div className="flex items-center gap-6">{a.status === FormStatus.CERTIFIED && <button onClick={() => setViewingCert(a)} className="bg-amber-700 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-amber-700/20 hover:scale-[1.05] transition-all">Gold Certificate</button>}{(isPM || isCTO || isAdmin) && a.status === FormStatus.SUBMITTED && <button onClick={() => { setSelectedAppraisal(a); setShowAppraisalModal(true); }} className="btn-majestic px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">Appraise Now</button>}</div>
                   </div>
                 ))}
               </div>
