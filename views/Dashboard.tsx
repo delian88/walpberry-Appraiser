@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { UserRole, FormStatus, PerformanceContract, AnnualAppraisal, MonthlyReview } from '../types';
 import { ContractForm } from './ContractForm';
@@ -56,10 +56,15 @@ export const Dashboard: React.FC = () => {
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPM = currentUser.role === UserRole.PM;
   const isCTO = currentUser.role === UserRole.CTO;
+  const isManagement = isPM || isCTO || isAdmin;
 
   const userContracts = contracts.filter(c => isEmployee ? c.employeeId === currentUser.id : true);
   const userAppraisals = appraisals.filter(a => isEmployee ? a.employeeId === currentUser.id : true);
   const userMonthly = monthlyReviews.filter(r => isEmployee ? r.employeeId === currentUser.id : true);
+
+  // Management Stats
+  const pendingContractsCount = useMemo(() => contracts.filter(c => c.status === FormStatus.SUBMITTED).length, [contracts]);
+  const pendingAppraisalsCount = useMemo(() => appraisals.filter(a => a.status === FormStatus.SUBMITTED).length, [appraisals]);
 
   const handleShare = (phase: Tab, id: string) => {
     const baseUrl = window.location.href.split('?')[0];
@@ -138,6 +143,7 @@ export const Dashboard: React.FC = () => {
       {/* Main Content Area */}
       <main className="flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-12">
+          {/* Dashboard Header */}
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-8 pt-4">
             <div className="animate-slide-up">
               <h1 className="text-6xl font-black text-emerald-950 tracking-tighter uppercase leading-none">{activeTab === 'HR' ? 'Governance' : activeTab}</h1>
@@ -155,6 +161,47 @@ export const Dashboard: React.FC = () => {
               )}
             </div>
           </header>
+
+          {/* Management Insight Row (Action Center for PM/CTO/Admin) */}
+          {isManagement && activeTab !== 'HR' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+              <button 
+                onClick={() => setActiveTab('CONTRACT')}
+                className={`flex items-center gap-8 p-10 rounded-[3rem] border transition-all text-left group ${activeTab === 'CONTRACT' ? 'bg-emerald-900 border-emerald-800 shadow-2xl shadow-emerald-900/20' : 'bg-white border-emerald-900/5 shadow-xl hover:border-emerald-200'}`}
+              >
+                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 ${activeTab === 'CONTRACT' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-900'}`}>
+                  📜
+                </div>
+                <div>
+                  <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${activeTab === 'CONTRACT' ? 'text-emerald-200/50' : 'text-slate-400'}`}>Contract Approval Queue</p>
+                  <div className="flex items-center gap-4">
+                    <p className={`text-4xl font-black ${activeTab === 'CONTRACT' ? 'text-white' : 'text-emerald-950'}`}>{pendingContractsCount}</p>
+                    {pendingContractsCount > 0 && (
+                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${activeTab === 'CONTRACT' ? 'bg-amber-500 text-white' : 'bg-emerald-900 text-white'}`}>Action Required</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('ANNUAL')}
+                className={`flex items-center gap-8 p-10 rounded-[3rem] border transition-all text-left group ${activeTab === 'ANNUAL' ? 'bg-amber-700 border-amber-800 shadow-2xl shadow-amber-900/20' : 'bg-white border-emerald-900/5 shadow-xl hover:border-emerald-200'}`}
+              >
+                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 ${activeTab === 'ANNUAL' ? 'bg-white/10 text-white' : 'bg-amber-50 text-amber-700'}`}>
+                  ⚖️
+                </div>
+                <div>
+                  <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${activeTab === 'ANNUAL' ? 'text-amber-100/50' : 'text-slate-400'}`}>Pending Annual Audits</p>
+                  <div className="flex items-center gap-4">
+                    <p className={`text-4xl font-black ${activeTab === 'ANNUAL' ? 'text-white' : 'text-emerald-950'}`}>{pendingAppraisalsCount}</p>
+                    {pendingAppraisalsCount > 0 && (
+                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${activeTab === 'ANNUAL' ? 'bg-emerald-900 text-white' : 'bg-amber-900 text-white'}`}>Review Now</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
 
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             {activeTab === 'HR' && <HRDashboard />}
@@ -174,23 +221,25 @@ export const Dashboard: React.FC = () => {
                           <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                        </div>
                        <div>
-                          <p className="text-2xl font-black text-emerald-950 group-hover:translate-x-1 transition-transform">{new Date(c.updatedAt).getFullYear()} Contract</p>
+                          <p className="text-2xl font-black text-emerald-950 group-hover:translate-x-1 transition-transform">{new Date(c.updatedAt).getFullYear()} Performance Contract</p>
                           <div className="flex items-center gap-4 mt-2">
                              <span className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{c.periodFrom} — {c.periodTo}</span>
                              <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
-                             {!isEmployee && <span className="text-[11px] text-amber-700 font-bold uppercase tracking-widest">{c.employeeFirstName} {c.employeeSurname}</span>}
+                             <span className="text-[11px] text-amber-700 font-bold uppercase tracking-widest">{c.employeeFirstName} {c.employeeSurname}</span>
                           </div>
                        </div>
                     </div>
                     <div className="flex items-center gap-8">
                        <span className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                          c.status === FormStatus.APPROVED ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-100'
+                          c.status === FormStatus.APPROVED ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 
+                          c.status === FormStatus.SUBMITTED ? 'bg-amber-100 text-amber-800 border-amber-200 animate-pulse' :
+                          'bg-slate-50 text-slate-500 border-slate-100'
                        }`}>{c.status}</span>
                        <div className="flex gap-3">
                           <button onClick={() => handleShare('CONTRACT', c.id)} className="p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl text-emerald-800 transition-all border border-slate-200">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                           </button>
-                          <button onClick={() => { setSelectedContract(c); setShowContractModal(true); }} className="btn-majestic px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Review</button>
+                          <button onClick={() => { setSelectedContract(c); setShowContractModal(true); }} className="btn-majestic px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Review & Approve</button>
                        </div>
                     </div>
                   </div>
@@ -203,8 +252,16 @@ export const Dashboard: React.FC = () => {
                           <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                        </div>
                        <div>
-                          <p className="text-2xl font-black text-emerald-950">{new Date(m.todayDate).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} Cycle</p>
-                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-2">{m.tasks.length} Responsibilities Monitored</p>
+                          <p className="text-2xl font-black text-emerald-950">{new Date(m.todayDate).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} Cycle Log</p>
+                          <div className="flex items-center gap-4 mt-2">
+                             <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{m.tasks.length} Responsibilities Monitored</p>
+                             {!isEmployee && (
+                                <>
+                                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                  <p className="text-[11px] text-amber-700 font-bold uppercase tracking-widest">Employee Profile Active</p>
+                                </>
+                             )}
+                          </div>
                        </div>
                     </div>
                     <div className="flex items-center gap-8">
@@ -221,8 +278,13 @@ export const Dashboard: React.FC = () => {
                           <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
                        </div>
                        <div>
-                          <p className="text-3xl font-black text-emerald-950">{a.finalRating} Quality</p>
-                          <p className="text-[12px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">Weighted Aggregate: {a.totalScore.toFixed(2)}%</p>
+                          <p className="text-3xl font-black text-emerald-950">{a.finalRating} Rating</p>
+                          <div className="flex items-center gap-4 mt-2">
+                             <p className="text-[12px] text-slate-500 font-bold uppercase tracking-[0.2em]">Weighted Aggregate: {a.totalScore.toFixed(2)}%</p>
+                             {!isEmployee && (
+                                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-black uppercase">Review Candidate Active</span>
+                             )}
+                          </div>
                        </div>
                     </div>
                     <div className="flex items-center gap-6">
