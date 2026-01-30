@@ -49,9 +49,9 @@ export const SignaturePad: React.FC<Props> = ({ onSave, disabled, initialValue }
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = '#34d399'; // Emerald-400
+    ctx.strokeStyle = '#064e3b'; // Majestic Emerald Deep
 
     const rect = canvas.getBoundingClientRect();
     const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
@@ -74,12 +74,12 @@ export const SignaturePad: React.FC<Props> = ({ onSave, disabled, initialValue }
   };
 
   return (
-    <div className="space-y-3">
-      <div className={`relative border border-emerald-500/20 rounded-2xl overflow-hidden bg-slate-900/50 ${disabled ? 'opacity-70 grayscale' : 'cursor-crosshair'}`}>
+    <div className="space-y-4">
+      <div className={`relative border border-emerald-900/10 rounded-[2rem] overflow-hidden bg-white shadow-inner transition-all ${disabled ? 'opacity-70 grayscale' : 'cursor-crosshair active:ring-2 active:ring-emerald-800/20'}`}>
         <canvas
           ref={canvasRef}
           width={400}
-          height={120}
+          height={140}
           onMouseDown={startDrawing}
           onMouseUp={stopDrawing}
           onMouseMove={draw}
@@ -87,11 +87,11 @@ export const SignaturePad: React.FC<Props> = ({ onSave, disabled, initialValue }
           onTouchStart={startDrawing}
           onTouchEnd={stopDrawing}
           onTouchMove={draw}
-          className="w-full h-32 block"
+          className="w-full h-36 block"
         />
         {!hasContent && !disabled && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">Sign Here</span>
+            <span className="text-[11px] text-slate-300 font-black uppercase tracking-[0.4em] opacity-40">Corporate Signature</span>
           </div>
         )}
       </div>
@@ -99,9 +99,9 @@ export const SignaturePad: React.FC<Props> = ({ onSave, disabled, initialValue }
         <button 
           type="button" 
           onClick={clear} 
-          className="text-[9px] text-slate-500 font-black uppercase tracking-widest hover:text-emerald-400 transition-colors"
+          className="text-[10px] text-slate-400 font-black uppercase tracking-widest hover:text-emerald-900 transition-colors px-4 py-2 border border-slate-100 rounded-xl hover:bg-slate-50"
         >
-          Clear Signature
+          Reset Signature
         </button>
       )}
     </div>
