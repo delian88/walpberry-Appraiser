@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { UserRole, PerformanceContract, AnnualAppraisal, MonthlyReview, User } from '../types';
 
@@ -16,6 +16,23 @@ export const HistoryView: React.FC<Props> = ({ onViewContract, onViewAppraisal, 
   const [filter, setFilter] = useState<'ALL' | 'CONTRACT' | 'MONTHLY' | 'ANNUAL'>('ALL');
 
   const isManagement = currentUser?.role !== UserRole.EMPLOYEE;
+  const isPM = currentUser?.role === UserRole.PM;
+  const isCTO = currentUser?.role === UserRole.CTO;
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
+
+  // Filter available users based on manager's authorization
+  const selectableUsers = useMemo(() => {
+    if (isCTO || isAdmin) return users;
+    if (isPM) return users.filter(u => u.department === currentUser?.department);
+    return users.filter(u => u.id === currentUser?.id);
+  }, [users, currentUser, isPM, isCTO, isAdmin]);
+
+  // Ensure selected user is within selectable range if selectableUsers changes
+  useEffect(() => {
+    if (selectableUsers.length > 0 && !selectableUsers.find(u => u.id === selectedUserId)) {
+      setSelectedUserId(selectableUsers[0].id);
+    }
+  }, [selectableUsers, selectedUserId]);
 
   const historyItems = useMemo(() => {
     const userContracts = contracts.filter(c => c.employeeId === selectedUserId);
@@ -45,7 +62,9 @@ export const HistoryView: React.FC<Props> = ({ onViewContract, onViewAppraisal, 
           </div>
           <div>
             <h3 className="text-xl font-black text-emerald-950 uppercase tracking-tighter">Professional Archive</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Viewing records for: {targetUser?.name}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+              {isPM ? `Department Archive: ${currentUser?.department}` : 'Global Corporate Ledger'}
+            </p>
           </div>
         </div>
 
@@ -62,13 +81,20 @@ export const HistoryView: React.FC<Props> = ({ onViewContract, onViewAppraisal, 
         </div>
 
         {isManagement && (
-          <select 
-            value={selectedUserId} 
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            className="bg-emerald-50 border border-emerald-100 rounded-2xl px-6 py-4 text-emerald-950 font-bold text-sm outline-none focus:ring-2 focus:ring-emerald-800 transition-all w-full md:w-64"
-          >
-            {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
-          </select>
+          <div className="w-full md:w-64 space-y-2">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Select Personnel Node</label>
+            <select 
+              value={selectedUserId} 
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="bg-emerald-50 border border-emerald-100 rounded-2xl px-6 py-4 text-emerald-950 font-bold text-sm outline-none focus:ring-2 focus:ring-emerald-800 transition-all w-full"
+            >
+              {selectableUsers.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.name} {u.id === currentUser?.id ? '(You)' : `[${u.role}]`}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 
@@ -85,7 +111,6 @@ export const HistoryView: React.FC<Props> = ({ onViewContract, onViewAppraisal, 
           
           return (
             <div key={idx} className="relative group animate-slide-up" style={{ animationDelay: `${idx * 0.05}s` }}>
-              {/* Timeline Node */}
               <div className="absolute -left-[54px] md:-left-[88px] top-6 w-10 h-10 bg-[#fdfbf7] border-4 border-emerald-900 rounded-full flex items-center justify-center text-emerald-900 font-black text-[10px] shadow-lg z-10 group-hover:scale-125 transition-transform">
                 {idx + 1}
               </div>
